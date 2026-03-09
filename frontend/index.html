@@ -202,10 +202,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
     <div class="lfg"><label>Password</label><input id="li-p" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
     <button class="l-btn" onclick="doLogin()">Sign In →</button>
     <div class="l-hint">
-      <div class="l-hint-t">Demo Credentials — Click to fill</div>
-      <div class="l-cred" onclick="fillC('admin','Admin@123')"><span class="lc-r lc-admin">ADMIN</span><span class="lc-u">admin</span><span class="lc-p">Admin@123</span></div>
-      <div class="l-cred" onclick="fillC('superuser','Super@123')"><span class="lc-r lc-super">SUPERUSER</span><span class="lc-u">superuser</span><span class="lc-p">Super@123</span></div>
-      <div class="l-cred" onclick="fillC('viewer','Viewer@123')"><span class="lc-r lc-user">USER</span><span class="lc-u">viewer</span><span class="lc-p">Viewer@123</span></div>
+  <!-- Demo credentials removed -->
     </div>
   </div>
 </div>
@@ -1281,5 +1278,6 @@ async function doImport(){
   }
 })();
 </script>
+<footer style="width:100%;text-align:center;padding:12px 0;color:var(--dim);font-size:12px;background:var(--s1);position:fixed;bottom:0;left:0;z-index:9999;">build by pklakkoju</footer>
 </body>
 </html>
