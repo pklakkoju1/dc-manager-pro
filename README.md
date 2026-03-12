@@ -1,3 +1,4 @@
+# DC Manager Pro — v2.7.0
 # ⬡ DC Manager Pro
 
 <div align="center">
@@ -17,433 +18,415 @@ Track servers, racks, cabling, and spare parts — with role-based access contro
 
 </div>
 
----
-
-## ✨ Features
-
-| Module | Capabilities |
-|--------|-------------|
-| **Assets** | Full CRUD for servers, switches, routers, firewalls, LIUs, PDUs. Custom hardware fields (admin-configurable). Server Type field. Rack U-slot positioning. |
-| **Rack View** | Visual U-slot diagrams per rack. Color-coded by asset type. Click-through to asset detail. |
-| **Connectivity** | Full 4-hop path: `Server → LIU-A → LIU-B → Switch`. Port-level cable tracking with speed, VLAN, and purpose. |
-| **Stock / Parts** | SSD, NVMe, HDD, RAM, NIC, Disk Clips, Transceivers and more. Stock transactions: IN / OUT / ALLOCATE / RETURN / ADJUST. Low-stock alerts. |
-| **Export / Import** | Styled Excel export (Assets + Stock + Connectivity). Blank import templates with example rows. Drag-and-drop Excel import. |
-| **Users** | Superuser manages all users and roles. Full CRUD with email and department. |
-| **Field Manager** | Superuser adds/removes custom hardware fields (text, number, dropdown, textarea). System fields are locked. |
-| **Auth** | JWT-based login. Role-enforced API. Session persists on refresh. Rate-limited login endpoint. |
+**Production Datacenter Asset Management Platform**  
+Developed by **pklakkoju**
 
 ---
 
-## 🏗 Architecture
+## Stack
 
-```
-Browser
-  │
-  ▼
-┌─────────────────────────────────────────────────┐
-│  Nginx  :80   — Static SPA + Reverse Proxy      │
-│  Rate limiting · Security headers · Gzip        │
-└──────────────┬──────────────────────────────────┘
-               │  /api/*
-               ▼
-┌──────────────────────────────────────────────────┐
-│  FastAPI  :8000  (internal only)                 │
-│  JWT auth · REST API · Excel export/import       │
-└──────────────┬───────────────────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────────────────┐
-│  PostgreSQL 16  — Persistent named volume        │
-│  Auto-backup container  →  ./backups/            │
-└──────────────────────────────────────────────────┘
-```
-
-**Tech stack:**
-- **Frontend** — Vanilla HTML/CSS/JS SPA (no framework, zero build step)
-- **Backend** — Python 3.12 + FastAPI + asyncpg (async PostgreSQL driver)
-- **Database** — PostgreSQL 16 with full schema, indexes, and seed data
-- **Proxy** — Nginx 1.25 with rate limiting and security headers
-- **Auth** — HS256 JWT (no external dependencies)
+| Component | Technology |
+|-----------|------------|
+| Frontend  | Single-page HTML/JS/CSS (Nginx) |
+| Backend   | FastAPI (Python 3.12) |
+| Database  | PostgreSQL 16 |
+| Proxy     | Nginx 1.25 |
+| Backups   | Automated daily cron (postgres:alpine) |
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker 24+ and Docker Compose v2
-
-### 1 — Clone & Configure
+## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/dc-manager-pro.git
-cd dc-manager-pro
-
 cp .env.example .env
+nano .env            # Set DB_PASS and JWT_SECRET (avoid @ # % in password)
+docker compose up -d --build
+# Open: http://YOUR-SERVER-IP:3000
+# Login: admin / Admin@123  ← change immediately!
 ```
 
-Open `.env` and set at minimum:
+---
+
+## Default Credentials
+
+| Username | Password   | Role       | Access |
+|----------|------------|------------|--------|
+| admin    | Admin@123  | Superuser  | Full access |
+
+> ⚠ **Change the default password immediately after first login via User Management.**
+
+---
+
+## Directory Structure
+
+```
+dc-prod/
+├── backend/
+│   ├── Dockerfile
+│   ├── main.py               ← FastAPI app, all API routes
+│   ├── init.sql              ← PostgreSQL schema (no demo data)
+│   └── requirements.txt
+├── frontend/
+│   ├── Dockerfile
+│   └── index.html            ← Full SPA
+├── nginx/
+│   └── nginx.conf
+├── scripts/
+│   ├── entrypoint-backup.sh      ← Backup container entrypoint
+│   ├── manual-backup.sh          ← Run a manual backup
+│   ├── restore.sh                ← Restore from backup
+│   ├── export-offline.sh         ← Bundle for air-gapped servers
+│   ├── import-offline.sh         ← Install on air-gapped servers
+│   ├── migrate-volumes.sh        ← Migrate from named to local volumes
+│   ├── migrate-server-types.sql  ← Update server_type options on existing installs
+│   └── migrate-add-zone.sql      ← Add zone column to racks (existing installs)
+├── volumes/                      ← ALL persistent data (back this up!)
+│   ├── postgres/                 ← PostgreSQL data files
+│   └── backups/
+│       ├── daily/                ← Auto daily backups (retained 30 days)
+│       ├── weekly/               ← Auto weekly backups (retained 12 weeks)
+│       └── manual/               ← Manual backups
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+---
+
+## Roles & Permissions
+
+| Action | Superuser | Admin | User |
+|--------|-----------|-------|------|
+| View Assets / Racks / Stock | ✓ | ✓ | ✓ |
+| Add / Edit / Delete Assets | ✓ | ✓ | ✗ |
+| Add / Edit Racks | ✓ | ✓ | ✗ |
+| Delete Racks | ✓ | ✗ | ✗ |
+| Add / Edit Stock & Transactions | ✓ | ✓ | ✗ |
+| Add / Edit Connectivity | ✓ | ✓ | ✗ |
+| Export to Excel | ✓ | ✓ | ✓ |
+| Import from Excel | ✓ | ✓ | ✗ |
+| User Management | ✓ | ✗ | ✗ |
+| Field Manager (add/edit fields) | ✓ | ✗ | ✗ |
+
+---
+
+## Features
+
+### Assets
+- Full CRUD with tabbed form: General / Hardware / Network / Connectivity
+- **General fields:** Hostname, Type, Status, Datacenter, Rack ID, U Position, Asset Tag, Serial Number, PO Number, EOL Date, App/Asset Owner, Notes
+- **Network fields:** Provisioning IP (Prov IP), BMC IP (iDRAC/iLO/IPMI), Data IP, Backup IP, MAC, VLAN, Additional IPs
+- **Hardware fields:** Fully configurable via Field Manager (Superuser only)
+- **Asset History:** Full audit trail per asset — tracks creation, status changes, rack moves, hardware changes
+- **Slot conflict protection:** Warns before saving if rack+U position is already occupied; hard-fails on import to prevent duplicate placement
+- Inline connectivity entry from asset form
+- Export/Import via Excel
+
+### Asset Table
+- Resizable columns (drag column edge)
+- Column chooser (toggle which columns are visible)
+- Items per page: 50 / 100 / All
+- Pagination with page navigation
+- Filter by Type and Status
+- Multi-select checkboxes per row + select-all in header
+- Bulk delete selected assets (admin/superuser only) with confirmation
+
+### Asset Types
+Server, VM, Switch, Router, Firewall, LIU, Patch Panel, PDU, KVM, Other
+
+### Server Types (Hardware field)
+Rack Server, Tower, Blade, Dense Server, High-Density, Virtual, VM,
+Type-A through Type-F, Type-S, Type-T, Type-X through Type-Z, Other (with free-text input)
+
+### Field Manager (Superuser)
+- Add custom hardware fields: text, number, dropdown, textarea
+- Edit existing field labels, options, placeholder on all fields including system fields
+- Dropdown fields with "Other" option automatically show a free-text input box
+- Live preview of hardware form
+
+### Rack View
+- Visual rack diagrams showing U positions and assets
+- **3-level hierarchy:** Datacenter → Zone → Row
+- Each rack card shows Datacenter · Zone · Row as subtitle
+- Filter by Datacenter, Zone, and Row independently
+- Edit rack details inline (✎ button — admin/superuser)
+- Delete empty racks (✕ button — superuser only; blocked if rack has assets)
+- Click any asset in rack diagram to open asset detail
+
+### Rack Fields
+| Field | Description |
+|-------|-------------|
+| Rack ID | Unique identifier (e.g. R-01, INHYDNARF1NR218) |
+| Datacenter | Physical datacenter or pod (e.g. HYN-POD-2) |
+| Zone | Zone within the datacenter (e.g. Zone-1) |
+| Row | Row within the zone (e.g. Row-1) |
+| Total U | Rack height in U (default 42) |
+| Notes | Optional notes |
+
+### Stock Management
+- SKU tracking with category, brand, model, spec, form factor
+- Transactions: IN / OUT / ALLOCATE / RETURN / ADJUST
+- Per-SKU transaction history
+- Low stock warning (≤5 units)
+
+### Connectivity
+- Full path tracking: Server Port → LIU-A → LIU-B → Switch Port
+- Cable type, speed, VLAN, purpose
+
+### Asset History / Audit Log
+Every asset change is logged automatically:
+- `ASSET_CREATED` — new asset added (green)
+- `ASSET_RELOCATED` — rack, DC, or U position changed (yellow)
+- `ASSET_STATUS_CHANGE` — Online/Offline/Maintenance etc. (purple)
+- `ASSET_UPDATED` — any other field change (blue)
+- `ASSET_DELETED` — asset removed (red)
+
+Each log entry records: what changed, who made the change, and timestamp.
+Access via the **History** tab in any asset detail panel.
+
+### Session Security
+- Auto-logout after **10 minutes of inactivity**
+- Warning banner with 60-second countdown before logout
+- "Stay Logged In" button resets the timer
+- Activity tracked: mouse move, keyboard, scroll, touch
+
+### UI
+- Dark mode (default) and Light mode toggle — saved in browser
+- Light mode: clean white theme with professional blue accents
+- Sidebar navigation with role-aware menu items
+- Toast notifications, modal forms, table search/filter
+- Version and developer credit in sidebar footer
+
+---
+
+## Export / Import
+
+### Export (Download)
+Downloads a full Excel workbook with all data across sheets:
+- **Assets** — all assets with all fields including rack_zone and rack_row
+- **Racks** — all racks with datacenter, zone, row
+- **Stock** — all stock items
+- **Connectivity** — all cabling records
+
+### Import Templates (Download)
+Single Excel workbook with template sheets:
+- **Assets_Template** — includes `datacenter`, `rack_zone`, `rack_row`, `rack_id` columns.
+  When importing, if `rack_zone` / `rack_row` are provided, the rack record is **automatically
+  created or updated** in the racks table — no separate rack import needed.
+- **Stock_Template**
+- **Connectivity_Template**
+
+### Assets Import Column Reference
+
+| Column | Required | Notes |
+|--------|----------|-------|
+| hostname | ✓ | Must be unique |
+| asset_type | | Default: Server |
+| status | | Default: Online |
+| datacenter | | e.g. HYN-POD-2 |
+| rack_zone | | e.g. Zone-1 — auto-creates rack |
+| rack_row | | e.g. Row-1 — auto-creates rack |
+| rack_id | | e.g. R-01 |
+| u_start | | U position (number) |
+| u_height | | Default: 1 |
+| prov_ip | | Provisioning IP (also accepts mgmt_ip) |
+| bmc_ip | | BMC/iDRAC/iLO IP (also accepts oob_ip) |
+| data_ip | | Data network IP |
+| bkup_ip | | Backup network IP |
+| mac_addr | | MAC address |
+| vlan | | VLAN ID |
+| asset_tag | | Physical asset tag |
+| serial_number | | Serial number |
+| po_number | | Purchase order number |
+| eol_date | | End of life date (YYYY-MM-DD) |
+| app_owner | | Application/asset owner |
+| notes | | Free text notes |
+| *(custom hw fields)* | | Any field_key from Field Manager |
+
+---
+
+## Database Migrations (Existing Installs)
+
+Run these on existing installs when upgrading — safe to run multiple times:
+
+```bash
+# Add zone column to racks table (v2.3.0+)
+docker cp scripts/migrate-add-zone.sql dcm_postgres:/tmp/
+docker exec dcm_postgres psql -U dcuser -d dcmanager -f /tmp/migrate-add-zone.sql
+
+# Update server_type options (v2.1.0+)
+docker cp scripts/migrate-server-types.sql dcm_postgres:/tmp/
+docker exec dcm_postgres psql -U dcuser -d dcmanager -f /tmp/migrate-server-types.sql
+```
+
+---
+
+## Backup & Restore
+
+```bash
+# Manual backup
+./scripts/manual-backup.sh
+# Output: volumes/backups/manual/dcmanager_manual_YYYYMMDD_HHMMSS.sql.gz
+
+# Restore
+./scripts/restore.sh volumes/backups/daily/dcmanager_2026-03-09_020001.sql.gz
+
+# Auto backups
+# Daily at 02:00 AM → volumes/backups/daily/  (30 day retention)
+# Weekly Sunday 03:00 → volumes/backups/weekly/ (12 week retention)
+```
+
+**Backup solution integration:** Point your backup tool to:
+```
+/appdata/dc-prod/volumes/
+```
+
+---
+
+## Offline / Air-Gapped Deployment
+
+```bash
+# On internet server — create bundle
+./scripts/export-offline.sh
+
+# Transfer bundle to offline server
+scp dc-manager-offline-*.tar user@offline-server:/opt/
+
+# On offline server
+cd /opt && tar -xf dc-manager-offline-*.tar
+./import-offline.sh
+```
+
+---
+
+## API
+
+Interactive docs: `http://your-server:3000/api/docs`
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/auth/login` | POST | None | Login → JWT |
+| `/api/auth/me` | GET | Any | Current user |
+| `/api/stats` | GET | Any | Dashboard stats |
+| `/api/assets` | GET/POST | Any/Write | List/create assets |
+| `/api/assets/{id}` | GET/PUT/DELETE | Any/Write | Asset CRUD |
+| `/api/assets/{id}/history` | GET | Any | Asset audit history |
+| `/api/assets/check-slot` | GET | Any | Check rack+U slot occupancy |
+| `/api/racks` | GET/POST | Any/Write | List/create racks |
+| `/api/racks/{id}` | PUT | Write | Edit rack |
+| `/api/racks/{id}` | DELETE | Superuser | Delete rack (must be empty) |
+| `/api/stock` | GET/POST/PUT/DELETE | Any/Write | Stock CRUD |
+| `/api/stock/transaction` | POST | Write | Stock transaction |
+| `/api/connectivity` | GET/POST/PUT/DELETE | Any/Write | Connectivity CRUD |
+| `/api/users` | GET/POST/PUT/DELETE | Superuser | User management |
+| `/api/hw-fields` | GET/POST/PUT/DELETE | Super/Any | Field management |
+| `/api/export/excel` | GET | Any | Export all data |
+| `/api/import/excel?sheet=X` | POST | Write | Bulk import |
+| `/api/audit` | GET | Superuser | Full audit log |
+| `/api/health` | GET | None | Health check |
+
+---
+
+## Environment Variables (.env)
 
 ```env
-DB_PASS=your_strong_database_password_here
-
-# Generate with: python3 -c "import secrets; print(secrets.token_hex(32))"
-JWT_SECRET=your_generated_32char_secret_here
-```
-
-### 2 — Build & Run
-
-```bash
-docker compose up -d --build
-```
-
-First boot takes ~60 seconds as PostgreSQL initializes and seeds data.
-
-### 3 — Open the App
-
-```
-http://localhost:3000
-```
-
-### Default Login Credentials
-
-| Role | Username | Password | Access Level |
-|------|----------|----------|--------------|
-| **Superuser** | `superuser` | `Super@123` | Full access — users, fields, everything |
-| **Admin** | `admin` | `Admin@123` | Read + Write — assets, stock, connectivity |
-| **User** | `viewer` | `Viewer@123` | Read-only + Excel export |
-
-> ⚠️ **Change all passwords immediately after first login via the Users section.**
-
----
-
-## 🔐 Role-Based Access Control
-
-| Permission | Superuser | Admin | User |
-|------------|:---------:|:-----:|:----:|
-| View assets, racks, stock, connectivity | ✓ | ✓ | ✓ |
-| Add / Edit / Delete assets | ✓ | ✓ | — |
-| Manage stock & transactions | ✓ | ✓ | — |
-| Add / Edit connectivity | ✓ | ✓ | — |
-| Import from Excel | ✓ | ✓ | — |
-| Export to Excel | ✓ | ✓ | ✓ |
-| Manage users | ✓ | — | — |
-| Add / remove hardware fields | ✓ | — | — |
-| View permissions matrix | ✓ | — | — |
-
----
-
-## 📦 Project Structure
-
-```
-dc-manager-pro/
-├── docker-compose.yml          ← Orchestrates all services
-├── .env.example                ← Copy to .env and configure
-├── .gitignore
-├── README.md
-│
-├── backend/
-│   ├── Dockerfile              ← Python 3.12-slim
-│   ├── main.py                 ← FastAPI app — all routes, auth, export/import
-│   ├── init.sql                ← PostgreSQL schema + indexes + seed data
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── Dockerfile              ← Nginx serving static files
-│   └── index.html              ← Full SPA — all UI in one file
-│
-├── nginx/
-│   └── nginx.conf              ← Reverse proxy, rate limiting, security headers
-│
-└── scripts/
-    ├── backup.sh               ← Runs daily at 02:00 AM via cron container
-    ├── manual-backup.sh        ← One-click manual backup
-    └── restore.sh              ← Interactive restore from .sql.gz file
+APP_PORT=3000           # Web UI port
+DB_USER=dcuser          # PostgreSQL username
+DB_PASS=changeme123     # PostgreSQL password (avoid @ # % symbols)
+DB_NAME=dcmanager       # Database name
+DB_EXTERNAL_PORT=5432   # PostgreSQL external port
+JWT_SECRET=<32+ chars>  # JWT signing secret
+TOKEN_TTL_HOURS=24      # Session duration
+ALLOWED_ORIGINS=*       # CORS origins
 ```
 
 ---
 
-## 💾 Backup & Restore
-
-### Automated Backups
-
-The `backup` container runs a cron job every day at **02:00 AM** automatically.
-
-```
-backups/
-├── daily/    ← Last 30 days  (dcmanager_YYYY-MM-DD_HHMMSS.sql.gz)
-└── weekly/   ← Last 12 weeks (dcmanager_weekYYYY-WW.sql.gz)
-```
-
-### Manual Backup
-
-```bash
-# Via helper script
-./scripts/manual-backup.sh
-
-# Or directly
-docker exec dcm_postgres pg_dump -U dcuser dcmanager \
-  | gzip > backups/manual/dcmanager_$(date +%Y%m%d_%H%M%S).sql.gz
-```
-
-### Restore
-
-```bash
-# Interactive restore (confirms before overwriting)
-./scripts/restore.sh backups/daily/dcmanager_2025-01-15_020001.sql.gz
-```
-
-### Offsite / Cloud Backup
-
-```bash
-# Rsync to remote server (add to crontab)
-rsync -az ./backups/ user@backup-server:/backups/dcmanager/
-
-# AWS S3
-aws s3 sync ./backups/ s3://your-bucket/dcmanager/
-
-# Rclone (works with GCS, Azure Blob, Backblaze B2, etc.)
-rclone sync ./backups/ remote:dcmanager-backups
-```
-
----
-
-## 🖥 Bare-Metal / VM Deployment
-
-For environments without Docker:
-
-### 1 — Install Dependencies
-
-```bash
-# Ubuntu 22.04 / Debian 12
-sudo apt update && sudo apt install -y python3.12 python3.12-venv postgresql-16 nginx
-
-# RHEL 9 / Rocky 9 / AlmaLinux 9
-sudo dnf install -y python3.12 postgresql-server postgresql-contrib nginx
-sudo postgresql-setup --initdb && sudo systemctl enable --now postgresql
-```
-
-### 2 — Database
-
-```bash
-sudo -u postgres psql << 'SQL'
-CREATE USER dcuser WITH PASSWORD 'your_password';
-CREATE DATABASE dcmanager OWNER dcuser;
-GRANT ALL PRIVILEGES ON DATABASE dcmanager TO dcuser;
-SQL
-
-sudo -u postgres psql -d dcmanager < backend/init.sql
-```
-
-### 3 — Python Backend (systemd service)
-
-```bash
-cd backend
-python3.12 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-
-sudo tee /etc/systemd/system/dcmanager.service << 'EOF'
-[Unit]
-Description=DC Manager Pro API
-After=network.target postgresql.service
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/opt/dc-manager-pro/backend
-Environment="DATABASE_URL=postgresql://dcuser:your_password@localhost:5432/dcmanager"
-Environment="JWT_SECRET=your_32char_jwt_secret"
-Environment="TOKEN_TTL_HOURS=24"
-ExecStart=/opt/dc-manager-pro/backend/venv/bin/uvicorn main:app \
-          --host 127.0.0.1 --port 8000 --workers 2
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload && sudo systemctl enable --now dcmanager
-```
-
-### 4 — Nginx
-
-```bash
-sudo cp nginx/nginx.conf /etc/nginx/conf.d/dcmanager.conf
-sudo mkdir -p /var/www/dcmanager
-sudo cp frontend/index.html /var/www/dcmanager/
-
-# Update root path in config
-sudo sed -i 's|/usr/share/nginx/html|/var/www/dcmanager|' \
-  /etc/nginx/conf.d/dcmanager.conf
-
-sudo nginx -t && sudo systemctl reload nginx
-```
-
----
-
-## 🔒 HTTPS / SSL
-
-### Let's Encrypt (public domain)
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d dcmanager.yourcompany.com
-```
-
-### Self-signed (internal / intranet)
-
-```bash
-sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout /etc/nginx/ssl/dcmanager.key \
-  -out    /etc/nginx/ssl/dcmanager.crt \
-  -subj "/CN=dcmanager.local/O=YourCompany/C=IN"
-```
-
-Then add to your `nginx.conf` server block:
-```nginx
-listen 443 ssl;
-ssl_certificate     /etc/nginx/ssl/dcmanager.crt;
-ssl_certificate_key /etc/nginx/ssl/dcmanager.key;
-ssl_protocols       TLSv1.2 TLSv1.3;
-ssl_ciphers         HIGH:!aNULL:!MD5;
-```
-
----
-
-## 📡 API Reference
-
-All endpoints require `Authorization: Bearer <token>` except `/api/auth/login` and `/api/health`.
-
-| Method | Endpoint | Role | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/auth/login` | — | Login → JWT token |
-| `GET` | `/api/auth/me` | Any | Current user info |
-| `GET` | `/api/stats` | Any | Dashboard statistics |
-| `GET` `POST` | `/api/assets` | Any / Write | List / create assets |
-| `GET` `PUT` `DELETE` | `/api/assets/{id}` | Any / Write | Get / update / delete |
-| `GET` `POST` | `/api/racks` | Any / Write | List / create racks |
-| `GET` `POST` | `/api/stock` | Any / Write | List / create stock |
-| `PUT` `DELETE` | `/api/stock/{id}` | Write | Update / delete stock |
-| `POST` | `/api/stock/transaction` | Write | IN / OUT / ALLOCATE / RETURN / ADJUST |
-| `GET` | `/api/stock/{id}/transactions` | Any | Transaction history |
-| `GET` `POST` | `/api/connectivity` | Any / Write | List / create connections |
-| `PUT` `DELETE` | `/api/connectivity/{id}` | Write | Update / delete |
-| `GET` `POST` `PUT` `DELETE` | `/api/users` | Superuser | Full user management |
-| `GET` `POST` `DELETE` | `/api/hw-fields` | Superuser | Hardware field management |
-| `GET` | `/api/export/excel` | Any | Download full Excel export |
-| `POST` | `/api/import/excel?sheet=Assets` | Write | Bulk import from Excel |
-| `GET` | `/api/health` | — | Health check (for load balancers) |
-
-> Interactive API docs available at `http://your-server:3000/api/docs`
-
----
-
-## 🛡 Security Checklist
-
-Before going to production:
-
-- [ ] Changed `DB_PASS` from default
-- [ ] Generated a unique `JWT_SECRET` (32+ characters)
-- [ ] Changed **all three** default user passwords after first login
-- [ ] Set `ALLOWED_ORIGINS` to your specific domain (not `*`)
-- [ ] Removed or blocked `DB_EXTERNAL_PORT` (set to empty `""` in `.env`)
-- [ ] Enabled HTTPS / SSL
-- [ ] Configured firewall — only ports 80/443 open to public
-- [ ] Tested backup restore at least once
-
----
-
-## 🔧 Operations
-
-### View Logs
-
-```bash
-docker compose logs -f               # all services
-docker compose logs -f backend       # API only
-docker compose logs -f db            # database only
-```
-
-### Update Application
-
-```bash
-git pull
-docker compose up -d --build
-```
-
-### Stop / Start
-
-```bash
-docker compose stop        # stop, keep data
-docker compose start       # start again
-docker compose down        # remove containers (volume data preserved)
-docker compose down -v     # ⚠️ WIPES ALL DATA — only for full reset
-```
-
-### Direct Database Access
-
-```bash
-docker exec -it dcm_postgres psql -U dcuser dcmanager
-```
-
----
-
-## 📋 Excel Import Format
-
-Download blank templates from the app (Export & Import → Download Blank Templates).
-
-### Assets Sheet
-
-| Column | Required | Description |
-|--------|----------|-------------|
-| `hostname` | ✓ | Unique server/device name |
-| `asset_type` | ✓ | Server, Switch, Router, Firewall, LIU, PDU, etc. |
-| `status` | | Online, Offline, Maintenance, Decommissioned, Spare |
-| `server_type` | | Rack Server, Tower, Blade, Dense Server, Virtual |
-| `datacenter` | | Datacenter name/code |
-| `rack_id` | | Must match a rack ID |
-| `u_start` | | Starting U position |
-| `u_height` | | Height in U slots |
-| `mgmt_ip` | | Management IP address |
-| `oob_ip` | | OOB / IPMI / iDRAC IP |
-| `asset_tag` | | Physical asset tag |
-| `serial_number` | | Device serial number |
-| + custom fields | | Any fields added via Field Manager |
-
-### Stock Sheet
-
-| Column | Required | Description |
-|--------|----------|-------------|
-| `category` | ✓ | SSD, NVMe, HDD, RAM, NIC, Disk Clip, etc. |
-| `brand` | | Samsung, Dell, Kingston… |
-| `model` | | 870 EVO, PM9A3… |
-| `spec` | | 2TB, 64GB DDR4-3200… |
-| `form_factor` | | 2.5", M.2 2280, RDIMM, SFP+… |
-| `interface` | | SATA III, NVMe PCIe 4.0, DDR4… |
-| `total_qty` | | Total units in stock |
-| `available_qty` | | Available (not allocated) units |
-| `location` | | Physical location (Shelf A-3, Cabinet 2…) |
-| `unit_cost` | | Cost per unit in ₹ |
-
-### Connectivity Sheet
-
-| Column | Required | Description |
-|--------|----------|-------------|
-| `src_hostname` | ✓ | Source server hostname |
-| `src_slot` | | Source slot (slot1) |
-| `src_port` | | Source port (port1) |
-| `src_port_label` | | Combined label (slot1port1) |
-| `liu_a_rack` | | LIU-A rack ID |
-| `liu_a_hostname` | | LIU-A device hostname |
-| `liu_a_port` | | LIU-A port |
-| `liu_b_rack` | | LIU-B rack ID |
-| `liu_b_hostname` | | LIU-B device hostname |
-| `liu_b_port` | | LIU-B port |
-| `dst_hostname` | | Destination switch hostname |
-| `dst_port` | | Destination switch port (Gi1/0/10) |
-| `cable_type` | | Fiber SM, Fiber MM, CAT6, DAC, AOC… |
-| `speed` | | 1G, 10G, 25G, 40G, 100G |
-| `vlan` | | VLAN ID |
-| `purpose` | | Data, Management, Storage, Heartbeat, BMC/IPMI |
+## Changelog
+
+### v2.7.0 (2026-03-12)
+- Added: Slot conflict check on manual asset add/edit — warns with confirmation dialog showing conflicting hostname and U position before saving
+- Added: Slot conflict check on import — rows that conflict with an existing asset are skipped and counted as errors (hard fail, no overwrite)
+- Added: `/api/assets/check-slot` endpoint — checks rack+U range occupancy, supports multi-U devices and excludes self on edit
+- Fixed: Rack view filter — Zone dropdown now correctly populated from `zone` field; Rows from `row_label`
+- Fixed: Rack view filter — rk-zone2 (Zones) dropdown now declared in HTML directly, no longer dynamically injected (was causing empty Zones dropdown on load)
+- Fixed: Rack data normalisation — if `zone` is null but `row_label` contains "zone", value is automatically treated as zone in the UI
+- Fixed: Import now accepts both `rack_zone`/`rack_row` and legacy `zone`/`row_label` column names in Assets sheet
+
+### v2.6.0 (2026-03-12)
+- Added: Asset multi-select with checkbox column in assets table
+- Added: Select-all checkbox in assets table header
+- Added: Bulk delete button in toolbar — appears when assets are selected, shows count, requires confirmation
+- Added: Bulk delete clears selection and refreshes table and dashboard on completion
+
+### v2.5.0 (2026-03-12)
+- Fixed: Export rack_zone/rack_row column mapping — zone value was appearing in rack_row column instead of rack_zone
+- Fixed: Export now uses explicit named variables for rack_zone and rack_row to prevent column shift
+- Fixed: Import accepts both `rack_zone`/`zone` and `rack_row`/`row_label` column names for backwards compatibility
+
+### v2.4.0 (2026-03-11)
+- Fixed: Rack View crash "filterZ is not defined" on load
+- Changed: rack_zone and rack_row columns merged into Assets import/export template (no separate Racks template)
+- Added: Assets import auto-creates/updates rack records when rack_zone or rack_row is provided
+- Added: Export includes rack_zone and rack_row columns in Assets sheet (joined from racks table)
+
+### v2.3.0 (2026-03-11)
+- Added: Separate Datacenter, Zone, and Row fields on racks (DB: new `zone` column in racks table)
+- Added: Rack edit mode — ✎ button on each rack card opens pre-filled edit form (admin/superuser)
+- Added: Rack delete — ✕ button (superuser only), blocked if rack has assets assigned
+- Added: 3-level rack grouping in Rack View: Datacenter → Zone → Row
+- Added: Three independent filter dropdowns in Rack View (Datacenter, Zone, Row)
+- Added: Each rack card shows DC · Zone · Row subtitle line
+- Added: Rack create/edit logged to audit trail
+- Added: Racks sheet in Excel export (rack_id, datacenter, zone, row_label, total_u)
+- Added: Racks import sheet support
+- Updated: Rack list API ordered by datacenter, zone, row_label, rack_id
+- DB migration: `scripts/migrate-add-zone.sql`
+
+### v2.2.0 (2026-03-11)
+- Added: Auto-logout after 10 minutes of inactivity
+- Added: 60-second warning banner before logout with "Stay Logged In" button
+- Added: Asset History tab in asset detail panel — full per-asset audit trail
+- Added: Audit log written on every asset create, update, delete, relocate, status change
+- Added: Hardware field changes (disk, RAM, storage etc.) detected and logged
+- Added: `/api/assets/{id}/history` endpoint
+- Added: `/api/audit` endpoint (superuser — full audit log)
+- Added: Resizable columns in Assets table (drag column edge)
+- Added: Column chooser in Assets table (⊞ Columns button)
+- Added: Items per page selector (50 / 100 / All) in Assets table
+- Added: Pagination bar with page navigation in Assets table
+- Fixed: Assets table header/data column mismatch (Prov IP was showing server_type data)
+- Fixed: Dashboard Racks count now includes racks referenced by assets, not just explicitly created racks
+
+### v2.1.0 (2026-03-10)
+- Fixed: Field Manager "Add Field" and "Edit Opts" buttons not opening modal (null element crash)
+- Fixed: Export returning "Not authenticated" (was using window.location without auth header)
+- Added: Light mode with clean white/blue professional theme
+- Added: Dark/Light mode toggle button in sidebar (preference saved in browser)
+- Added: PO Number, EOL Date, App/Asset Owner fields in asset General tab
+- Added: Data IP and Backup IP fields in asset Network tab
+- Added: VM option to asset Type dropdown
+- Renamed: Management IP → Provisioning IP (Prov IP)
+- Renamed: OOB/IPMI IP → BMC IP (iDRAC / iLO / IPMI)
+- Added: Server Type options Type-A to Type-F, Type-S, Type-T, Type-X to Type-Z
+- Added: "Other" option in dropdown fields shows free-text input box
+- Added: Superuser can now edit options on all fields including system fields
+- Added: Version display and developer credit in sidebar footer
+- Removed: Demo credentials block from login page
+- Updated: Export and import templates updated with all new fields
+
+### v2.0.0 (2026-03-09)
+- Production Docker deployment (FastAPI + PostgreSQL + Nginx)
+- JWT authentication with role-based access (superuser / admin / user)
+- Asset management with hardware fields, connectivity tracking
+- Stock management with transaction history
+- Excel export and import
+- Automated daily/weekly backups
+- Offline/air-gapped deployment support
+- All data in ./volumes/ for easy backup integration
+
+### v1.0.0 (2026-03-08)
+- Initial single-file localStorage prototype
 
 ---
 

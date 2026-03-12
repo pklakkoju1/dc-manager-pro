@@ -1,43 +1,43 @@
 version: "3.9"
 
 # ══════════════════════════════════════════════════
-# DC Manager Pro — Production Docker Compose
-# Usage:
-#   cp .env.example .env && nano .env   # set your passwords
-#   docker compose up -d --build
-#   Open: http://localhost:3000
+# DC Manager Pro — Production Stack
+# All persistent data lives in ./volumes/
+# Point your backup solution to: /appdata/dc-prod/volumes/
 # ══════════════════════════════════════════════════
 
 services:
 
-  # ── PostgreSQL ───────────────────────────────────
+  # ── PostgreSQL Database ──────────────────────────
   db:
     image: postgres:16-alpine
     container_name: dcm_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER:     ${DB_USER:-dcuser}
-      POSTGRES_PASSWORD: ${DB_PASS:-dcpassword123}
+      POSTGRES_PASSWORD: ${DB_PASS:-changeme123}
       POSTGRES_DB:       ${DB_NAME:-dcmanager}
       PGDATA:            /var/lib/postgresql/data/pgdata
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./volumes/postgres:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./backups:/backups
+      - ./volumes/backups:/backups
     ports:
       - "${DB_EXTERNAL_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U ${DB_USER:-dcuser} -d ${DB_NAME:-dcmanager}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-dcuser} -d ${DB_NAME:-dcmanager}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
-    networks: [dcm-net]
+    networks:
+      dcm-net:
+        aliases: [db]
     logging:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
-  # ── Backend API ──────────────────────────────────
+  # ── FastAPI Backend ──────────────────────────────
   backend:
     build:
       context: ./backend
@@ -45,21 +45,27 @@ services:
     container_name: dcm_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL:    "postgresql://${DB_USER:-dcuser}:${DB_PASS:-dcpassword123}@db:5432/${DB_NAME:-dcmanager}"
-      JWT_SECRET:      ${JWT_SECRET:-CHANGE_THIS_SECRET_USE_32_CHARS_MIN}
+      DB_HOST:         db
+      DB_PORT:         "5432"
+      DB_NAME:         ${DB_NAME:-dcmanager}
+      DB_USER:         ${DB_USER:-dcuser}
+      DB_PASS:         ${DB_PASS:-changeme123}
+      JWT_SECRET:      ${JWT_SECRET:-change-this-secret-min-32-chars-long}
       TOKEN_TTL_HOURS: ${TOKEN_TTL_HOURS:-24}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
     depends_on:
       db:
         condition: service_healthy
-    networks: [dcm-net]
+    networks:
+      dcm-net:
+        aliases: [backend]
     expose: ["8000"]
     healthcheck:
-      test: ["CMD-SHELL","python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health')\""]
-      interval: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
       timeout: 10s
-      retries: 3
-      start_period: 20s
+      retries: 5
+      start_period: 45s
     logging:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
@@ -76,38 +82,33 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      backend:
-        condition: service_healthy
-    networks: [dcm-net]
+      - backend
+    networks:
+      - dcm-net
     logging:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
-  # ── Daily Auto-Backup ────────────────────────────
+  # ── Automated Daily Backups ──────────────────────
   backup:
     image: postgres:16-alpine
     container_name: dcm_backup
     restart: unless-stopped
     environment:
-      PGPASSWORD: ${DB_PASS:-dcpassword123}
+      PGPASSWORD: ${DB_PASS:-changeme123}
       DB_USER:    ${DB_USER:-dcuser}
       DB_NAME:    ${DB_NAME:-dcmanager}
     volumes:
-      - ./backups:/backups
-      - ./scripts/backup.sh:/backup.sh:ro
-    command: >
-      sh -c "chmod +x /backup.sh &&
-             echo '0 2 * * * /backup.sh $$DB_USER $$DB_NAME db >> /backups/backup.log 2>&1' > /etc/crontabs/root &&
-             crond -f -d 6"
+      - ./volumes/backups:/backups
+      - ./scripts/entrypoint-backup.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     depends_on:
       db:
         condition: service_healthy
-    networks: [dcm-net]
+    networks:
+      - dcm-net
 
-volumes:
-  pgdata:
-    driver: local
-
+# ── NO named volumes — everything in ./volumes/ ──
 networks:
   dcm-net:
     driver: bridge

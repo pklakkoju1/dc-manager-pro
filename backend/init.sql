@@ -1,5 +1,6 @@
 -- DC Manager Pro — PostgreSQL Schema
--- Run once on first deploy; idempotent via IF NOT EXISTS
+-- Clean version: no demo data, no sample assets/stock/connectivity
+-- Only schema + system hardware fields are seeded
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS racks (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     rack_id     TEXT NOT NULL UNIQUE,
     datacenter  TEXT,
+    zone        TEXT,
     row_label   TEXT,
     total_u     INT NOT NULL DEFAULT 42,
     notes       TEXT,
@@ -145,32 +147,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity, entity_id);
 
 -- ══════════════════════════════════════════════════
--- SEED DATA (only if tables are empty)
+-- SYSTEM HARDWARE FIELDS (always seeded — not demo data)
+-- These define the hardware form structure, required by the app
 -- ══════════════════════════════════════════════════
-
--- Default users (passwords: Admin@123, Super@123, Viewer@123 — SHA-256 hashed)
-INSERT INTO users (name, username, pw_hash, role, email, dept)
-SELECT 'Super Administrator','superuser',
-    encode(digest('Super@123','sha256'),'hex'),
-    'superuser','superuser@datacenter.local','DC Operations'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE username='superuser');
-
-INSERT INTO users (name, username, pw_hash, role, email, dept)
-SELECT 'DC Admin','admin',
-    encode(digest('Admin@123','sha256'),'hex'),
-    'admin','admin@datacenter.local','IT Management'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE username='admin');
-
-INSERT INTO users (name, username, pw_hash, role, email, dept)
-SELECT 'Read Only Viewer','viewer',
-    encode(digest('Viewer@123','sha256'),'hex'),
-    'user','viewer@datacenter.local','Monitoring'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE username='viewer');
-
--- Default hardware fields
 INSERT INTO hw_fields (field_key,label,field_type,placeholder,options,required,sort_order,is_system)
 SELECT 'server_type','Server Type','select','Rack Server, Tower, Blade…',
-    'Rack Server'||chr(10)||'Tower'||chr(10)||'Blade'||chr(10)||'Dense Server'||chr(10)||'High-Density'||chr(10)||'Virtual',
+    'Rack Server'||chr(10)||'Tower'||chr(10)||'Blade'||chr(10)||'Dense Server'||chr(10)||'High-Density'||chr(10)||'Virtual'||chr(10)||'VM'||chr(10)||'Type-A'||chr(10)||'Type-B'||chr(10)||'Type-C'||chr(10)||'Type-D'||chr(10)||'Type-E'||chr(10)||'Type-F'||chr(10)||'Type-S'||chr(10)||'Type-T'||chr(10)||'Type-X'||chr(10)||'Type-Y'||chr(10)||'Type-Z'||chr(10)||'Other',
     false,10,true
 WHERE NOT EXISTS (SELECT 1 FROM hw_fields WHERE field_key='server_type');
 
@@ -206,54 +188,17 @@ INSERT INTO hw_fields (field_key,label,field_type,placeholder,required,sort_orde
 VALUES ('pspd','Port Speed','text','10G / 25G / 100G',false,90,true)
 ON CONFLICT (field_key) DO NOTHING;
 
--- Sample racks
-INSERT INTO racks (rack_id,datacenter,row_label,total_u)
-VALUES ('R-01','DC1-Mumbai','A',42),('R-02','DC1-Mumbai','A',42),('R-10','DC1-Mumbai','B',42)
-ON CONFLICT (rack_id) DO NOTHING;
-
--- Sample assets
-INSERT INTO assets (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,mgmt_ip,oob_ip,asset_tag,serial_number,notes,hw_data)
-VALUES ('web-prod-01','Server','Online','Rack Server','DC1-Mumbai','R-01',10,2,'192.168.10.11','10.0.1.11','TAG-001','SN100001','Primary web server',
-    '{"make":"Dell","model":"PowerEdge R750","cpu":"2x Xeon Gold 6348 / 56c","ram":"256 GB DDR4 ECC","stor":"4x 1.92TB NVMe","os":"Ubuntu 22.04","nports":4,"pspd":"25G"}')
-ON CONFLICT (hostname) DO NOTHING;
-
-INSERT INTO assets (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,mgmt_ip,oob_ip,asset_tag,serial_number,notes,hw_data)
-VALUES ('db-prod-01','Server','Online','Rack Server','DC1-Mumbai','R-01',12,2,'192.168.10.12','10.0.1.12','TAG-002','SN100002','PostgreSQL primary',
-    '{"make":"HPE","model":"ProLiant DL380 Gen10","cpu":"2x Xeon Silver 4316","ram":"512 GB DDR4 ECC","stor":"8x 960GB SSD","os":"RHEL 8.6","nports":4,"pspd":"25G"}')
-ON CONFLICT (hostname) DO NOTHING;
-
-INSERT INTO assets (hostname,asset_type,status,datacenter,rack_id,u_start,u_height,mgmt_ip,asset_tag,serial_number,hw_data)
-VALUES ('core-sw-01','Switch','Online','DC1-Mumbai','R-02',1,1,'192.168.1.1','TAG-010','SN200001',
-    '{"make":"Cisco","model":"Nexus 9348GC","os":"NX-OS 9.3","nports":48,"pspd":"100G"}')
-ON CONFLICT (hostname) DO NOTHING;
-
-INSERT INTO assets (hostname,asset_type,status,datacenter,rack_id,u_start,u_height,mgmt_ip,asset_tag,serial_number,hw_data)
-VALUES ('LIU-02','LIU','Online','DC1-Mumbai','R-02',4,1,NULL,'TAG-020','SN300001',
-    '{"make":"Panduit","model":"FWME2"}')
-ON CONFLICT (hostname) DO NOTHING;
-
-INSERT INTO assets (hostname,asset_type,status,datacenter,rack_id,u_start,u_height,mgmt_ip,asset_tag,serial_number,hw_data)
-VALUES ('LIU-10','LIU','Online','DC1-Mumbai','R-10',4,1,NULL,'TAG-021','SN300002',
-    '{"make":"Panduit","model":"FWME2"}')
-ON CONFLICT (hostname) DO NOTHING;
-
--- Sample stock
-INSERT INTO stock (category,brand,model,spec,form_factor,interface,total_qty,avail_qty,alloc_qty,unit_cost,storage_loc)
-VALUES
-('NVMe','Samsung','PM9A3','1.92TB','U.2','NVMe PCIe 4.0',20,14,6,32000,'Shelf A-1'),
-('SSD','Micron','5400 Pro','960GB','2.5"','SATA III',30,22,8,8500,'Shelf A-2'),
-('HDD','Seagate','Exos X18','18TB','3.5"','SAS 12G',24,18,6,22000,'Shelf A-3'),
-('RAM','Samsung','M393A8G40BB4','64GB DDR4-3200 RDIMM','RDIMM','DDR4',40,28,12,14000,'Shelf B-1'),
-('RAM','Kingston','KSM32RD4/32','32GB DDR4-3200 RDIMM','RDIMM','DDR4',60,4,56,7500,'Shelf B-2'),
-('NIC','Intel','X710-DA4','4-port 10GbE SFP+','PCIe x8','10GbE',10,7,3,28000,'Cabinet 1'),
-('Disk Clip','Dell','R750-HDD-Tray','2.5" to 3.5" drive tray','Other','Other',50,38,12,800,'Shelf C-1'),
-('Transceiver','Cisco','SFP-10G-SR','10G SFP+ SR 850nm','SFP+','10GbE',20,5,15,3500,'Cabinet 2')
-ON CONFLICT DO NOTHING;
-
--- Sample connectivity
-INSERT INTO connectivity (src_hostname,src_slot,src_port,src_port_label,liu_a_rack,liu_a_hostname,liu_a_port,liu_b_rack,liu_b_hostname,liu_b_port,dst_hostname,dst_port,cable_type,speed,vlan,purpose)
-VALUES
-('web-prod-01','slot1','port1','slot1port1','R-02','LIU-02','port5','R-10','LIU-10','port5','core-sw-01','Gi1/0/10','Fiber SM','10G','100','Data'),
-('web-prod-01','slot1','port2','slot1port2','R-02','LIU-02','port6','R-10','LIU-10','port6','core-sw-01','Gi1/0/11','Fiber SM','10G','200','Management'),
-('db-prod-01','slot1','port1','slot1port1','R-02','LIU-02','port7','R-10','LIU-10','port7','core-sw-01','Gi1/0/12','Fiber SM','25G','100','Data')
-ON CONFLICT DO NOTHING;
+-- ══════════════════════════════════════════════════
+-- FIRST RUN: Create default superuser ONLY if no users exist
+-- Username: admin  Password: Admin@123
+-- ⚠ CHANGE THIS PASSWORD immediately after first login!
+-- ══════════════════════════════════════════════════
+INSERT INTO users (name, username, pw_hash, role, email, dept)
+SELECT
+    'Administrator',
+    'admin',
+    encode(digest('Admin@123','sha256'),'hex'),
+    'superuser',
+    'admin@company.local',
+    'IT'
+WHERE NOT EXISTS (SELECT 1 FROM users LIMIT 1);
