@@ -1,4 +1,4 @@
-# ⬡ DC Manager Pro — v2.7.0
+# ⬡ DC Manager Pro — v2.8.0
 
 <div align="center">
 
