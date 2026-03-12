@@ -1,4 +1,22 @@
 # DC Manager Pro — v2.7.0
+# ⬡ DC Manager Pro
+
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-1.0.0-00c8ff?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-1.25-009639?style=flat-square&logo=nginx&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+
+**Production-ready Datacenter Asset Management platform.**  
+Track servers, racks, cabling, and spare parts — with role-based access control, persistent PostgreSQL storage, and automated backups.
+
+[Quick Start](#-quick-start) · [Features](#-features) · [Roles](#-role-based-access-control) · [Backup & Restore](#-backup--restore) · [API](#-api-reference) · [Bare-metal](#-bare-metal--vm-deployment)
+
+</div>
 
 **Production Datacenter Asset Management Platform**  
 Developed by **pklakkoju**
@@ -409,3 +427,25 @@ ALLOWED_ORIGINS=*       # CORS origins
 
 ### v1.0.0 (2026-03-08)
 - Initial single-file localStorage prototype
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit your changes: `git commit -m 'feat: add some feature'`
+4. Push to the branch: `git push origin feat/your-feature`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License — free to use, modify, and distribute.
+
+---
+
+<div align="center">
+Built for datacenter operations teams who need a simple, self-hosted, no-subscription asset tracker.
+</div>
