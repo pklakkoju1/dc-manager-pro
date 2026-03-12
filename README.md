@@ -12,11 +12,11 @@
 
 **Production-ready Datacenter Asset Management platform.**  
 Track servers, racks, cabling, and spare parts — with role-based access control, persistent PostgreSQL storage, and automated backups.
+
 Developed by **pklakkoju**
-[Quick Start](#-quick-start) · [Features](#-features) · [Roles](#-role-based-access-control) · [Backup & Restore](#-backup--restore) · [API](#-api-reference) · [Bare-metal](#-bare-metal--vm-deployment)
 
 </div>
----
+
 
 ## License
 
