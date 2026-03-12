@@ -1,5 +1,11 @@
 version: "3.9"
 
+# ══════════════════════════════════════════════════
+# DC Manager Pro — Production Stack
+# All persistent data lives in ./volumes/
+# Point your backup solution to: /appdata/dc-prod/volumes/
+# ══════════════════════════════════════════════════
+
 services:
 
   # ── PostgreSQL Database ──────────────────────────
@@ -13,9 +19,9 @@ services:
       POSTGRES_DB:       ${DB_NAME:-dcmanager}
       PGDATA:            /var/lib/postgresql/data/pgdata
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./volumes/postgres:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./backups:/backups
+      - ./volumes/backups:/backups
     ports:
       - "${DB_EXTERNAL_PORT:-5432}:5432"
     healthcheck:
@@ -93,7 +99,7 @@ services:
       DB_USER:    ${DB_USER:-dcuser}
       DB_NAME:    ${DB_NAME:-dcmanager}
     volumes:
-      - ./backups:/backups
+      - ./volumes/backups:/backups
       - ./scripts/entrypoint-backup.sh:/entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     depends_on:
@@ -102,10 +108,7 @@ services:
     networks:
       - dcm-net
 
-volumes:
-  pgdata:
-    driver: local
-
+# ── NO named volumes — everything in ./volumes/ ──
 networks:
   dcm-net:
     driver: bridge

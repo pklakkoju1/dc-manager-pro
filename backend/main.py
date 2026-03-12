@@ -177,6 +177,7 @@ class AssetCreate(BaseModel):
 class RackCreate(BaseModel):
     rack_id: str
     dc: Optional[str] = None
+    zone: Optional[str] = None
     row_label: Optional[str] = None
     total_u: int = 42
     notes: Optional[str] = None
@@ -245,6 +246,19 @@ def _out(r):
         except: d['hw_data'] = {}
     return d
 
+
+async def log_audit(conn, user: dict, action: str, entity: str, entity_id: str, detail: str = None):
+    """Write an audit log entry"""
+    try:
+        await conn.execute(
+            """INSERT INTO audit_log (user_id, username, action, entity, entity_id, detail)
+               VALUES ($1, $2, $3, $4, $5, $6)""",
+            user.get("id"), user.get("username"), action, entity, str(entity_id), detail
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger("dcmanager").warning(f"Audit log failed: {e}")
+
 # ═══════════════════════════════════════════════════
 # HEALTH
 # ═══════════════════════════════════════════════════
@@ -287,7 +301,12 @@ async def me(user=Depends(get_current_user)):
 async def stats(conn=Depends(db), _=Depends(get_current_user)):
     assets     = await conn.fetchval("SELECT COUNT(*) FROM assets")
     online     = await conn.fetchval("SELECT COUNT(*) FROM assets WHERE status='Online'")
-    racks      = await conn.fetchval("SELECT COUNT(*) FROM racks")
+    racks      = await conn.fetchval("""
+        SELECT COUNT(DISTINCT rack_id) FROM (
+            SELECT rack_id FROM racks
+            UNION
+            SELECT rack_id FROM assets WHERE rack_id IS NOT NULL AND rack_id != ''
+        ) r""")
     conns      = await conn.fetchval("SELECT COUNT(*) FROM connectivity")
     stock_skus = await conn.fetchval("SELECT COUNT(*) FROM stock")
     low_stock  = await conn.fetchval("SELECT COUNT(*) FROM stock WHERE avail_qty <= 5")
@@ -323,17 +342,21 @@ async def get_asset(aid:str, conn=Depends(db), _=Depends(get_current_user)):
     return _out(row)
 
 @app.post("/api/assets", status_code=201)
-async def create_asset(a:AssetCreate, conn=Depends(db), _=Depends(require_write)):
+async def create_asset(a:AssetCreate, conn=Depends(db), user=Depends(require_write)):
     row = await conn.fetchrow("""
         INSERT INTO assets (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,
             mgmt_ip,oob_ip,mac_addr,vlan,extra_ips,asset_tag,serial_number,notes,hw_data)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *""",
         a.host,a.type,a.status,a.server_type,a.dc,a.rack,a.ustart,a.uheight,
         a.ip,a.oob,a.mac,a.vlan,a.ipn,a.atag,a.sn,a.notes,json.dumps(a.hw_data))
+    detail = f"Created asset type={a.type} status={a.status} dc={a.dc} rack={a.rack} u={a.ustart}"
+    await log_audit(conn, user, "ASSET_CREATED", "asset", str(row["id"]), detail)
     return _out(row)
 
 @app.put("/api/assets/{aid}")
-async def update_asset(aid:str, a:AssetCreate, conn=Depends(db), _=Depends(require_write)):
+async def update_asset(aid:str, a:AssetCreate, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT * FROM assets WHERE id=$1", aid)
+    if not old: raise HTTPException(404,"Asset not found")
     row = await conn.fetchrow("""
         UPDATE assets SET hostname=$1,asset_type=$2,status=$3,server_type=$4,datacenter=$5,
             rack_id=$6,u_start=$7,u_height=$8,mgmt_ip=$9,oob_ip=$10,mac_addr=$11,vlan=$12,
@@ -341,33 +364,99 @@ async def update_asset(aid:str, a:AssetCreate, conn=Depends(db), _=Depends(requi
         WHERE id=$18 RETURNING *""",
         a.host,a.type,a.status,a.server_type,a.dc,a.rack,a.ustart,a.uheight,
         a.ip,a.oob,a.mac,a.vlan,a.ipn,a.atag,a.sn,a.notes,json.dumps(a.hw_data),aid)
-    if not row: raise HTTPException(404,"Asset not found")
+    # Detect meaningful changes for audit trail
+    changes = []
+    if old["status"] != a.status:
+        changes.append(f"Status: {old['status']} → {a.status}")
+    if old["rack_id"] != a.rack:
+        changes.append(f"Rack: {old['rack_id'] or '—'} → {a.rack or '—'}")
+    if old["datacenter"] != a.dc:
+        changes.append(f"DC: {old['datacenter'] or '—'} → {a.dc or '—'}")
+    if old["u_start"] != a.ustart:
+        changes.append(f"U Position: {old['u_start'] or '—'} → {a.ustart or '—'}")
+    if old["asset_type"] != a.type:
+        changes.append(f"Type: {old['asset_type']} → {a.type}")
+    # Detect hw_data changes (disks etc)
+    try:
+        old_hw = json.loads(old["hw_data"]) if old["hw_data"] else {}
+        new_hw = a.hw_data or {}
+        for k in set(list(old_hw.keys()) + list(new_hw.keys())):
+            ov, nv = old_hw.get(k), new_hw.get(k)
+            if ov != nv and k not in ("po_number","eol_date","app_owner"):
+                changes.append(f"HW {k}: {ov or '—'} → {nv or '—'}")
+    except: pass
+    if not changes:
+        changes.append("Asset updated (no structural changes)")
+    action = "ASSET_RELOCATED" if any("Rack:" in c or "DC:" in c or "U Position:" in c for c in changes) else              "ASSET_STATUS_CHANGE" if any("Status:" in c for c in changes) else "ASSET_UPDATED"
+    await log_audit(conn, user, action, "asset", aid, " | ".join(changes))
     return _out(row)
 
+
+@app.get("/api/assets/{aid}/history")
+async def asset_history(aid:str, conn=Depends(db), _=Depends(get_current_user)):
+    rows = await conn.fetch(
+        """SELECT * FROM audit_log WHERE entity='asset' AND entity_id=$1
+           ORDER BY created_at DESC LIMIT 200""", aid)
+    return [_out(r) for r in rows]
+
+@app.get("/api/audit")
+async def audit_log_list(entity:Optional[str]=None, limit:int=100,
+                          conn=Depends(db), _=Depends(require_superuser)):
+    if entity:
+        rows = await conn.fetch(
+            "SELECT * FROM audit_log WHERE entity=$1 ORDER BY created_at DESC LIMIT $2",
+            entity, limit)
+    else:
+        rows = await conn.fetch(
+            "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1", limit)
+    return [_out(r) for r in rows]
+
 @app.delete("/api/assets/{aid}", status_code=204)
-async def delete_asset(aid:str, conn=Depends(db), _=Depends(require_write)):
+async def delete_asset(aid:str, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT hostname,asset_type,rack_id,datacenter FROM assets WHERE id=$1", aid)
     await conn.execute("DELETE FROM assets WHERE id=$1", aid)
+    if old:
+        await log_audit(conn, user, "ASSET_DELETED", "asset", aid,
+            f"Deleted {old['hostname']} type={old['asset_type']} rack={old['rack_id']} dc={old['datacenter']}")
 
 # ═══════════════════════════════════════════════════
 # RACKS
 # ═══════════════════════════════════════════════════
 @app.get("/api/racks")
 async def list_racks(conn=Depends(db), _=Depends(get_current_user)):
-    rows = await conn.fetch("SELECT * FROM racks ORDER BY rack_id")
+    rows = await conn.fetch("SELECT * FROM racks ORDER BY datacenter,zone,row_label,rack_id")
     return [_out(r) for r in rows]
 
 @app.post("/api/racks", status_code=201)
-async def create_rack(r:RackCreate, conn=Depends(db), _=Depends(require_write)):
+async def create_rack(r:RackCreate, conn=Depends(db), user=Depends(require_write)):
     row = await conn.fetchrow("""
-        INSERT INTO racks (rack_id,datacenter,row_label,total_u,notes)
-        VALUES ($1,$2,$3,$4,$5) ON CONFLICT (rack_id) DO UPDATE
-        SET datacenter=$2,row_label=$3,total_u=$4,notes=$5 RETURNING *""",
-        r.rack_id,r.dc,r.row_label,r.total_u,r.notes)
+        INSERT INTO racks (rack_id,datacenter,zone,row_label,total_u,notes)
+        VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (rack_id) DO UPDATE
+        SET datacenter=$2,zone=$3,row_label=$4,total_u=$5,notes=$6 RETURNING *""",
+        r.rack_id,r.dc,r.zone,r.row_label,r.total_u,r.notes)
+    await log_audit(conn, user, "RACK_CREATED", "rack", r.rack_id,
+        f"Rack {r.rack_id} dc={r.dc} zone={r.zone} row={r.row_label} u={r.total_u}")
+    return _out(row)
+
+@app.put("/api/racks/{rid}")
+async def update_rack(rid:str, r:RackCreate, conn=Depends(db), user=Depends(require_write)):
+    row = await conn.fetchrow("""
+        UPDATE racks SET datacenter=$1,zone=$2,row_label=$3,total_u=$4,notes=$5
+        WHERE rack_id=$6 RETURNING *""",
+        r.dc,r.zone,r.row_label,r.total_u,r.notes,rid)
+    if not row: raise HTTPException(404,"Rack not found")
+    await log_audit(conn, user, "RACK_UPDATED", "rack", rid,
+        f"Updated: dc={r.dc} zone={r.zone} row={r.row_label} u={r.total_u}")
     return _out(row)
 
 @app.delete("/api/racks/{rid}", status_code=204)
-async def delete_rack(rid:str, conn=Depends(db), _=Depends(require_write)):
+async def delete_rack(rid:str, conn=Depends(db), user=Depends(require_superuser)):
+    # Check if rack has assets
+    count = await conn.fetchval("SELECT COUNT(*) FROM assets WHERE rack_id=$1", rid)
+    if count > 0:
+        raise HTTPException(400, f"Cannot delete rack '{rid}' — it has {count} asset(s). Move them first.")
     await conn.execute("DELETE FROM racks WHERE rack_id=$1", rid)
+    await log_audit(conn, user, "RACK_DELETED", "rack", rid, f"Rack {rid} deleted")
 
 # ═══════════════════════════════════════════════════
 # STOCK
@@ -541,6 +630,16 @@ async def create_hw_field(f:HWField, conn=Depends(db), _=Depends(require_superus
         f.key,f.label,f.field_type,f.placeholder,f.options,f.required,f.sort_order)
     return _out(row)
 
+
+@app.put("/api/hw-fields/{fid}")
+async def update_hw_field(fid:str, f:HWField, conn=Depends(db), _=Depends(require_superuser)):
+    row = await conn.fetchrow("""
+        UPDATE hw_fields SET label=$1,placeholder=$2,options=$3,required=$4
+        WHERE id=$5 RETURNING *""",
+        f.label, f.placeholder, f.options, f.required, fid)
+    if not row: raise HTTPException(404,"Field not found")
+    return _out(row)
+
 @app.delete("/api/hw-fields/{fid}", status_code=204)
 async def delete_hw_field(fid:str, conn=Depends(db), _=Depends(require_superuser)):
     sys = await conn.fetchval("SELECT is_system FROM hw_fields WHERE id=$1", fid)
@@ -568,18 +667,23 @@ async def export_excel(conn=Depends(db), _=Depends(get_current_user)):
 
     # Assets sheet
     ws_a = wb.active; ws_a.title="Assets"
-    a_hdrs = ["hostname","asset_type","status","server_type","datacenter","rack_id",
-              "u_start","u_height","mgmt_ip","oob_ip","mac_addr","vlan","asset_tag",
-              "serial_number",*[f["field_key"] for f in hw_fields],"notes"]
+    a_hdrs = ["hostname","asset_type","status","datacenter","rack_id",
+              "u_start","u_height",
+              "prov_ip","bmc_ip","data_ip","bkup_ip","mac_addr","vlan",
+              "asset_tag","serial_number","po_number","eol_date","app_owner",
+              *[f["field_key"] for f in hw_fields],"notes"]
     style(ws_a, a_hdrs)
     for r in await conn.fetch("SELECT * FROM assets ORDER BY hostname"):
         hw = {}
         try: hw = json.loads(r["hw_data"]) if r["hw_data"] else {}
         except: pass
-        ws_a.append([r.get("hostname"),r.get("asset_type"),r.get("status"),r.get("server_type"),
+        ws_a.append([r.get("hostname"),r.get("asset_type"),r.get("status"),
             r.get("datacenter"),r.get("rack_id"),r.get("u_start"),r.get("u_height"),
-            r.get("mgmt_ip"),r.get("oob_ip"),r.get("mac_addr"),r.get("vlan"),
+            r.get("mgmt_ip"),r.get("oob_ip"),
+            hw.get("data_ip"),hw.get("bkup_ip"),
+            r.get("mac_addr"),r.get("vlan"),
             r.get("asset_tag"),r.get("serial_number"),
+            hw.get("po_number"),hw.get("eol_date"),hw.get("app_owner"),
             *[hw.get(f["field_key"]) for f in hw_fields],r.get("notes")])
 
     # Stock sheet
@@ -590,6 +694,13 @@ async def export_excel(conn=Depends(db), _=Depends(get_current_user)):
         ws_s.append([r.get("category"),r.get("brand"),r.get("model"),r.get("spec"),
             r.get("form_factor"),r.get("interface"),r.get("total_qty"),r.get("avail_qty"),
             r.get("alloc_qty"),r.get("storage_loc"),r.get("unit_cost"),r.get("notes")])
+
+    # Racks sheet
+    ws_r = wb.create_sheet("Racks")
+    style(ws_r,["rack_id","datacenter","zone","row_label","total_u","notes"])
+    for r in await conn.fetch("SELECT * FROM racks ORDER BY datacenter,zone,row_label,rack_id"):
+        ws_r.append([r.get("rack_id"),r.get("datacenter"),r.get("zone"),
+                     r.get("row_label"),r.get("total_u"),r.get("notes")])
 
     # Connectivity sheet
     ws_c = wb.create_sheet("Connectivity")
@@ -641,8 +752,17 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
             if sheet=="Assets":
                 host=s(col(row,"hostname"))
                 if not host: continue
+                # Build hw_data: custom fields + new named fields from columns
                 hw={k:s(col(row,k)) for k in hw_keys if s(col(row,k))}
+                # Accept both old and new column names for IP fields
+                for new_k, old_k in [("data_ip","data_ip"),("bkup_ip","bkup_ip"),
+                                      ("po_number","po_number"),("eol_date","eol_date"),
+                                      ("app_owner","app_owner")]:
+                    v=s(col(row,new_k))
+                    if v: hw[new_k]=v
                 ex=await conn.fetchval("SELECT id FROM assets WHERE hostname=$1",host)
+                prov_ip = s(col(row,"prov_ip")) or s(col(row,"mgmt_ip"))
+                bmc_ip  = s(col(row,"bmc_ip"))  or s(col(row,"oob_ip"))
                 if not ex:
                     await conn.execute("""INSERT INTO assets
                         (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,
@@ -651,7 +771,7 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
                         host,s(col(row,"asset_type"))or"Server",s(col(row,"status"))or"Online",
                         s(col(row,"server_type")),s(col(row,"datacenter")),s(col(row,"rack_id")),
                         n(col(row,"u_start")),n(col(row,"u_height"))or 1,
-                        s(col(row,"mgmt_ip")),s(col(row,"oob_ip")),s(col(row,"mac_addr")),
+                        prov_ip, bmc_ip, s(col(row,"mac_addr")),
                         s(col(row,"vlan")),s(col(row,"asset_tag")),s(col(row,"serial_number")),
                         s(col(row,"notes")),json.dumps(hw))
                     imported+=1
@@ -667,6 +787,17 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
                     n(col(row,"total_qty"))or 0,n(col(row,"avail_qty"))or 0,
                     float(col(row,"unit_cost")) if col(row,"unit_cost") else None,
                     s(col(row,"storage_loc")),s(col(row,"notes")))
+                imported+=1
+            elif sheet=="Racks":
+                rid=s(col(row,"rack_id"))
+                if not rid: continue
+                await conn.execute("""
+                    INSERT INTO racks (rack_id,datacenter,zone,row_label,total_u,notes)
+                    VALUES ($1,$2,$3,$4,$5,$6)
+                    ON CONFLICT (rack_id) DO UPDATE
+                    SET datacenter=$2,zone=$3,row_label=$4,total_u=$5,notes=$6""",
+                    rid,s(col(row,"datacenter")),s(col(row,"zone")),s(col(row,"row_label")),
+                    n(col(row,"total_u")) or 42,s(col(row,"notes")))
                 imported+=1
             elif sheet=="Connectivity":
                 src=s(col(row,"src_hostname"))
