@@ -667,18 +667,31 @@ async def export_excel(conn=Depends(db), _=Depends(get_current_user)):
 
     # Assets sheet
     ws_a = wb.active; ws_a.title="Assets"
-    a_hdrs = ["hostname","asset_type","status","datacenter","rack_id",
+    a_hdrs = ["hostname","asset_type","status",
+              "datacenter","rack_zone","rack_row","rack_id",
               "u_start","u_height",
               "prov_ip","bmc_ip","data_ip","bkup_ip","mac_addr","vlan",
               "asset_tag","serial_number","po_number","eol_date","app_owner",
               *[f["field_key"] for f in hw_fields],"notes"]
     style(ws_a, a_hdrs)
+    # Build rack lookup for zone/row
+    rack_meta = {}
+    for rk in await conn.fetch("SELECT rack_id,zone,row_label FROM racks"):
+        rack_meta[str(rk["rack_id"])] = {
+            "zone":      rk["zone"],
+            "row_label": rk["row_label"],
+        }
     for r in await conn.fetch("SELECT * FROM assets ORDER BY hostname"):
         hw = {}
         try: hw = json.loads(r["hw_data"]) if r["hw_data"] else {}
         except: pass
+        rid = r.get("rack_id") or ""
+        rk  = rack_meta.get(rid, {})
+        rack_zone = rk.get("zone") or ""
+        rack_row  = rk.get("row_label") or ""
         ws_a.append([r.get("hostname"),r.get("asset_type"),r.get("status"),
-            r.get("datacenter"),r.get("rack_id"),r.get("u_start"),r.get("u_height"),
+            r.get("datacenter"),rack_zone,rack_row,rid,
+            r.get("u_start"),r.get("u_height"),
             r.get("mgmt_ip"),r.get("oob_ip"),
             hw.get("data_ip"),hw.get("bkup_ip"),
             r.get("mac_addr"),r.get("vlan"),
@@ -754,22 +767,33 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
                 if not host: continue
                 # Build hw_data: custom fields + new named fields from columns
                 hw={k:s(col(row,k)) for k in hw_keys if s(col(row,k))}
-                # Accept both old and new column names for IP fields
-                for new_k, old_k in [("data_ip","data_ip"),("bkup_ip","bkup_ip"),
-                                      ("po_number","po_number"),("eol_date","eol_date"),
-                                      ("app_owner","app_owner")]:
-                    v=s(col(row,new_k))
-                    if v: hw[new_k]=v
-                ex=await conn.fetchval("SELECT id FROM assets WHERE hostname=$1",host)
+                for fk in ["data_ip","bkup_ip","po_number","eol_date","app_owner"]:
+                    v=s(col(row,fk))
+                    if v: hw[fk]=v
                 prov_ip = s(col(row,"prov_ip")) or s(col(row,"mgmt_ip"))
                 bmc_ip  = s(col(row,"bmc_ip"))  or s(col(row,"oob_ip"))
+                rack_id = s(col(row,"rack_id"))
+                dc      = s(col(row,"datacenter"))
+                r_zone  = s(col(row,"rack_zone")) or s(col(row,"zone"))
+                r_row   = s(col(row,"rack_row"))   or s(col(row,"row_label"))
+                # Auto-upsert rack if zone/row provided
+                if rack_id and (r_zone or r_row or dc):
+                    await conn.execute("""
+                        INSERT INTO racks (rack_id,datacenter,zone,row_label,total_u)
+                        VALUES ($1,$2,$3,$4,42)
+                        ON CONFLICT (rack_id) DO UPDATE
+                        SET datacenter=COALESCE($2, racks.datacenter),
+                            zone=COALESCE($3, racks.zone),
+                            row_label=COALESCE($4, racks.row_label)""",
+                        rack_id, dc, r_zone, r_row)
+                ex=await conn.fetchval("SELECT id FROM assets WHERE hostname=$1",host)
                 if not ex:
                     await conn.execute("""INSERT INTO assets
                         (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,
                          mgmt_ip,oob_ip,mac_addr,vlan,asset_tag,serial_number,notes,hw_data)
                         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)""",
                         host,s(col(row,"asset_type"))or"Server",s(col(row,"status"))or"Online",
-                        s(col(row,"server_type")),s(col(row,"datacenter")),s(col(row,"rack_id")),
+                        s(col(row,"server_type")),dc,rack_id,
                         n(col(row,"u_start")),n(col(row,"u_height"))or 1,
                         prov_ip, bmc_ip, s(col(row,"mac_addr")),
                         s(col(row,"vlan")),s(col(row,"asset_tag")),s(col(row,"serial_number")),

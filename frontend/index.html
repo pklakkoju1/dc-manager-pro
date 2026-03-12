@@ -347,6 +347,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
         <select style="width:auto;padding:5px 9px" id="af-s" onchange="renderAssets()"><option value="">All Status</option><option>Online</option><option>Offline</option><option>Maintenance</option><option>Decommissioned</option><option>Spare</option></select>
         <select style="width:auto;padding:5px 9px" id="af-pp" onchange="renderAssets()" title="Items per page"><option value="50">50 / page</option><option value="100">100 / page</option><option value="all">All</option></select>
         <button class="btn bs bsm" onclick="toggleColChooser()" title="Choose columns" style="font-size:11px">⊞ Columns</button>
+        <button class="btn bd_ bsm" id="bulk-del-btn" style="display:none" onclick="bulkDeleteAssets()">🗑 Delete Selected (<span id="bulk-count">0</span>)</button>
       </div>
       <!-- Column Chooser Dropdown -->
       <div id="col-chooser" style="display:none;background:var(--s2);border:1px solid var(--bd2);border-radius:5px;padding:12px;margin-bottom:8px;display:none">
@@ -370,8 +371,9 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
     <div class="view" id="view-racks">
       <div class="sh"><span class="sh-t">Rack Diagrams</span><div class="sh-sep"></div>
         <div style="display:flex;gap:6px;align-items:center">
-          <select id="rk-zone" style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Datacenters</option></select>
-          <select id="rk-row"  style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Rows</option></select>
+          <select id="rk-zone"  style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Datacenters</option></select>
+          <select id="rk-zone2" style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Zones</option></select>
+          <select id="rk-row"   style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Rows</option></select>
           <button class="btn bs bsm" id="btn-nr" onclick="wrapWrite(openRackM)">+ New Rack</button>
         </div>
       </div>
@@ -973,6 +975,7 @@ async function renderDash(){
 // ── Assets table state ──────────────────────────────────────────────
 let _assetList=[], _assetPage=1;
 const ACOLS=[
+  {id:'chk',     label:'',          w:36,  always:true},
   {id:'status',  label:'Status',    w:80,  always:true},
   {id:'hostname',label:'Hostname',  w:200, always:true},
   {id:'type',    label:'Type',      w:90,  on:true},
@@ -1037,6 +1040,8 @@ async function renderAssets(){
     if(q)params.set('q',q);if(t)params.set('type',t);if(s)params.set('status',s);
     _assetList=await api('GET',`/assets?${params}`);
     _assetPage=1;
+    _selectedIds.clear();
+    updateBulkBar();
     renderAssetsTable();
   }catch(e){ toast('Failed to load assets: '+e.message,'err'); }
 }
@@ -1053,13 +1058,17 @@ function renderAssetsTable(){
   if(!total){tb.innerHTML='';if(em)em.style.display='';if(pginfo)pginfo.textContent='';if(pgbtns)pgbtns.innerHTML='';return;}
   if(em)em.style.display='none';
   const cols=visibleCols();
-  $('a-head').innerHTML=cols.map(c=>`<th style="width:${c.w}px;min-width:50px;position:relative">${c.label}<div class="col-resize"></div></th>`).join('');
+  $('a-head').innerHTML=cols.map(c=>{
+    if(c.id==='chk') return `<th style="width:${c.w}px;min-width:36px;text-align:center;position:relative"><input type="checkbox" id="chk-all" onclick="toggleAllChk(this)" style="cursor:pointer;accent-color:var(--c1)"/></th>`;
+    return `<th style="width:${c.w}px;min-width:50px;position:relative">${c.label}<div class="col-resize"></div></th>`;
+  }).join('');
   initColResize();
   const ro=!canWrite();
   tb.innerHTML=page.map(a=>{
     const hw=a.hw_data||{};
     return '<tr>'+cols.map(c=>{
       switch(c.id){
+        case 'chk':     return `<td style="text-align:center;padding:0 4px"><input type="checkbox" class="row-chk" data-id="${a.id}" onchange="onRowChk(this)" style="cursor:pointer;accent-color:var(--c1)"/></td>`;
         case 'status':  return `<td>${sbadge(a.status)}</td>`;
         case 'hostname':return `<td class="hi_" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis" onclick="showDetail('${a.id}')" title="${a.hostname}">${a.hostname}</td>`;
         case 'type':    return `<td><span class="tag">${a.asset_type}</span></td>`;
@@ -1087,6 +1096,45 @@ function renderAssetsTable(){
     pgbtns.innerHTML=btns.join('');
   }
 }
+// ── ASSET SELECT + BULK DELETE ────────────────────────────────────────
+let _selectedIds=new Set();
+function onRowChk(el){
+  const id=el.dataset.id;
+  if(el.checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  updateBulkBar();
+}
+function toggleAllChk(el){
+  document.querySelectorAll('.row-chk').forEach(c=>{
+    c.checked=el.checked;
+    const id=c.dataset.id;
+    if(el.checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  });
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const n=_selectedIds.size;
+  const btn=$('bulk-del-btn'), cnt=$('bulk-count');
+  if(btn) btn.style.display=n>0&&canWrite()?'':'none';
+  if(cnt) cnt.textContent=n;
+  // sync select-all state
+  const all=document.querySelectorAll('.row-chk');
+  const ca=$('chk-all');
+  if(ca&&all.length) ca.checked=all.length>0&&[...all].every(c=>c.checked);
+}
+async function bulkDeleteAssets(){
+  const ids=[..._selectedIds];
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} selected asset${ids.length>1?'s':''}? This cannot be undone.`)) return;
+  let done=0,errs=0;
+  for(const id of ids){
+    try{ await api('DELETE',`/assets/${id}`); done++; }
+    catch{ errs++; }
+  }
+  _selectedIds.clear();
+  toast(`Deleted ${done} asset${done>1?'s':''}${errs?` (${errs} failed)`:''}`, errs?'err':'ok');
+  renderAssets(); renderDash();
+}
+
 function renderHWFields(){
   const container=$('hw-fields-form'); if(!container) return;
   const fields=HW_FIELDS;
@@ -1295,24 +1343,22 @@ async function renderRacks(){
     _allRacks=await api('GET','/racks');
     _allRackAssets=await api('GET','/assets');
     // Populate filters: Datacenter, Zone, Row
-    const dcs=[...new Set(_allRacks.map(r=>r.datacenter).filter(Boolean))].sort();
+    // Normalise rack data: if zone is null but row_label looks like a zone, swap them
+    _allRacks = _allRacks.map(r=>{
+      if(!r.zone && r.row_label && /zone/i.test(r.row_label)){
+        return {...r, zone:r.row_label, row_label:null};
+      }
+      return r;
+    });
+    const dcs  =[...new Set(_allRacks.map(r=>r.datacenter).filter(Boolean))].sort();
     const zones=[...new Set(_allRacks.map(r=>r.zone).filter(Boolean))].sort();
-    const rows=[...new Set(_allRacks.map(r=>r.row_label).filter(Boolean))].sort();
-    const zsel=$('rk-zone'), rsel=$('rk-row');
-    const curZ=zsel?.value||'', curR=rsel?.value||'';
-    if(zsel){ zsel.innerHTML='<option value="">All Datacenters</option>'+dcs.map(d=>`<option${d===curZ?' selected':''}>${d}</option>`).join(''); }
-    if(rsel){ rsel.innerHTML='<option value="">All Rows</option>'+rows.map(r=>`<option${r===curR?' selected':''}>${r}</option>`).join(''); }
-    // Inject zone filter if not present
-    if(!$('rk-zone2')){
-      const zf=document.createElement('select');
-      zf.id='rk-zone2'; zf.style.cssText='padding:4px 8px;font-size:11px';
-      zf.onchange=renderRackGrid;
-      zf.innerHTML='<option value="">All Zones</option>';
-      $('rk-zone')?.parentNode?.insertBefore(zf, $('rk-row'));
-    }
-    const z2=$('rk-zone2');
-    const curZ2=z2?.value||'';
-    if(z2){ z2.innerHTML='<option value="">All Zones</option>'+zones.map(z=>`<option${z===curZ2?' selected':''}>${z}</option>`).join(''); }
+    const rows =[...new Set(_allRacks.map(r=>r.row_label).filter(Boolean))].sort();
+    console.log('Rack filters — DCs:',dcs,'Zones:',zones,'Rows:',rows);
+    const dcSel=$('rk-zone'), zoneSel=$('rk-zone2'), rowSel=$('rk-row');
+    const curDC=dcSel?.value||'', curZone=zoneSel?.value||'', curRow=rowSel?.value||'';
+    if(dcSel)   dcSel.innerHTML  ='<option value="">All Datacenters</option>'+dcs.map(d=>`<option${d===curDC?' selected':''}>${d}</option>`).join('');
+    if(zoneSel) zoneSel.innerHTML='<option value="">All Zones</option>'      +zones.map(z=>`<option${z===curZone?' selected':''}>${z}</option>`).join('');
+    if(rowSel)  rowSel.innerHTML ='<option value="">All Rows</option>'       +rows.map(r=>`<option${r===curRow?' selected':''}>${r}</option>`).join('');
     renderRackGrid();
   }catch(e){ toast('Racks load error: '+e.message,'err'); }
 }
@@ -1383,7 +1429,7 @@ function renderRackGrid(){
     </div>`;
   };
 
-  if(Object.keys(groups).length<=1 && !filterZ && !filterR){
+  if(Object.keys(groups).length<=1 && !filterDC && !filterZone && !filterRow){
     // No grouping needed — flat view
     grid.innerHTML=`<div class="rack-grid">${filtered.map(buildRack).join('')}</div>`;
   } else {
@@ -1725,20 +1771,18 @@ function downloadTemplate(){
   const wb=XLSX.utils.book_new();
   // ── Assets Template ──────────────────────────────────────────────────
   // Fixed columns + custom HW fields
-  const aFixed=['hostname','asset_type','status','datacenter','rack_id','u_start','u_height',
+  // Assets_Template — rack zone/row columns included directly
+  const aFixed=['hostname','asset_type','status',
+    'datacenter','rack_zone','rack_row','rack_id','u_start','u_height',
     'prov_ip','bmc_ip','data_ip','bkup_ip','mac_addr','vlan',
     'asset_tag','serial_number','po_number','eol_date','app_owner'];
   const aHWKeys=HW_FIELDS.map(f=>f.field_key);
   const aHdr=[...aFixed,...aHWKeys,'notes'];
-  const aExample=['web-prod-01','Server','Online','DC1-Mumbai','R-01',10,2,
+  const aExample=['web-prod-01','Server','Online','HYN-POD-2','Zone-1','Row-1','R-01',10,2,
     '192.168.10.11','10.0.1.10','10.10.0.11','10.20.0.11','aa:bb:cc:dd:ee:ff','10',
     'TAG-001','SN123456','PO-2024-001','2028-12-31','John Smith / IT Ops',
     ...HW_FIELDS.map(f=>f.placeholder||''),'Primary web server'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aHdr,aExample]),'Assets_Template');
-  // ── Racks Template ──────────────────────────────────────────────────
-  const rHdr=['rack_id','datacenter','zone','row_label','total_u','notes'];
-  const rExample=['R-01','HYN-POD-2','Zone-1','Row-1',42,'Primary compute rack'];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([rHdr,rExample]),'Racks_Template');
   // ── Stock Template ───────────────────────────────────────────────────
   const sHdr=['category','brand','model','spec','form_factor','interface','total_qty','avail_qty','storage_loc','unit_cost','notes'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([sHdr,['SSD','Samsung','870 EVO','2TB','2.5"','SATA III',20,20,'Shelf A-3',8500,'']]),'Stock_Template');
