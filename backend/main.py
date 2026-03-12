@@ -120,7 +120,7 @@ async def lifespan(app: FastAPI):
     log.info(f"Connecting to database at {DB_HOST}:{DB_PORT}...")
     for attempt in range(15):
         try:
-            pool = await asyncpg.create_pool(DB_URL, min_size=2, max_size=10)
+            pool = await asyncpg.create_pool(DB_URL, min_size=2, max_size=10, ssl=False)
             log.info("✓ Database connected successfully")
             break
         except Exception as e:
