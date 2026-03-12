@@ -29,13 +29,85 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px}
 .l-btn{width:100%;padding:11px;background:var(--c1);color:#000;border:none;border-radius:4px;font-family:var(--fn);font-size:13px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:all .15s;margin-top:4px}
 .l-btn:hover{background:#33d5ff;box-shadow:0 4px 20px rgba(0,200,255,.3)}
 .l-err{background:rgba(255,60,95,.1);border:1px solid rgba(255,60,95,.3);color:var(--c5);padding:8px 12px;border-radius:3px;font-size:11px;margin-bottom:12px;display:none}
-.l-hint{margin-top:18px;padding-top:14px;border-top:1px solid var(--bd)}
-.l-hint-t{font-size:8.5px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;font-weight:800;margin-bottom:8px}
-.l-cred{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--s3);border-radius:3px;margin-bottom:4px;cursor:pointer;transition:background .13s;border:1px solid transparent}
-.l-cred:hover{background:var(--s4);border-color:var(--bd2)}
-.l-cred span{font-family:var(--mono);font-size:9.5px}
-.lc-r{font-weight:800;letter-spacing:.5px}.lc-u{color:var(--c1)}.lc-p{color:var(--dim)}
-.lc-admin{color:var(--c5)}.lc-super{color:var(--c1)}.lc-user{color:var(--c2)}
+
+/* LITE MODE - Clean warm white theme */
+body.lite{
+  --bg:#fafbfc;--s1:#ffffff;--s2:#f3f5f7;--s3:#eaecef;--s4:#dde1e7;
+  --bd:#d0d7e0;--bd2:#b0bcc9;
+  --c1:#0077cc;--c2:#00955a;--c3:#d95a2a;--c4:#c48a00;--c5:#cc2244;--c6:#7055cc;
+  --tx:#2c3e52;--dim:#8796a8;--hi:#0d1f30;
+  --fn:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body.lite #lp{background:linear-gradient(135deg,#eef2f7 0%,#fafbfc 100%)}
+body.lite #lp::before{background:radial-gradient(ellipse 70% 50% at 30% 20%,rgba(0,119,204,.06) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(0,149,90,.04) 0%,transparent 60%)}
+body.lite .lgrid{background-image:linear-gradient(rgba(176,188,201,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(176,188,201,.25) 1px,transparent 1px)}
+body.lite .lbox{background:rgba(255,255,255,.98);border-color:var(--bd2);box-shadow:0 8px 40px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06)}
+body.lite .lfg input{background:#fff;color:var(--tx);border-color:var(--bd)}
+body.lite .lfg input:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(0,119,204,.12)}
+body.lite .l-btn{background:var(--c1)}
+body.lite .l-btn:hover{background:#0066bb;box-shadow:0 4px 16px rgba(0,119,204,.3)}
+body.lite select,body.lite textarea,body.lite input[type=text],body.lite input[type=number],body.lite input[type=date],body.lite input[type=password]{background:#fff!important;color:var(--tx)!important;border-color:var(--bd)!important}
+body.lite select:focus,body.lite textarea:focus,body.lite input:focus{border-color:var(--c1)!important;box-shadow:0 0 0 2px rgba(0,119,204,.1)!important}
+body.lite #sb{background:#ffffff;border-right-color:var(--bd)}
+body.lite .sb-top{border-bottom-color:var(--bd)}
+body.lite .sb-usr{background:var(--s2);border-color:var(--bd)}
+body.lite .sb-nav{background:#fff}
+body.lite .ni{color:var(--dim)}
+body.lite .ni:hover,.ni.on{background:var(--s2)!important;color:var(--c1)!important}
+body.lite .ni.on{border-left-color:var(--c1)!important}
+body.lite #mn{background:var(--bg)}
+body.lite .topbar{background:#fff;border-bottom-color:var(--bd)}
+body.lite .view{background:var(--bg)}
+body.lite .card{background:#fff;border-color:var(--bd);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+body.lite .sh{background:#fff;border-bottom-color:var(--bd)}
+body.lite table{border-color:var(--bd)}
+body.lite table thead tr{background:var(--s2)}
+body.lite table th{color:var(--dim);border-bottom-color:var(--bd)}
+body.lite .trow{border-bottom-color:var(--s3)}
+body.lite .trow:hover{background:#f0f7ff!important}
+body.lite .mo{background:rgba(0,0,0,.35)}
+body.lite .mbox{background:#fff;border-color:var(--bd2);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+body.lite .mhdr{background:var(--s2);border-bottom-color:var(--bd)}
+body.lite .mbody{background:#fff}
+body.lite .mftr{background:var(--s2);border-top-color:var(--bd)}
+body.lite .tabrow{background:var(--s2);border-bottom-color:var(--bd)}
+body.lite .tb{color:var(--dim)}
+body.lite .tb.on{background:#fff;color:var(--c1);border-bottom-color:var(--c1)}
+body.lite .btn.bs{background:var(--s2);border-color:var(--bd);color:var(--tx)}
+body.lite .btn.bs:hover{background:var(--s3);border-color:var(--bd2)}
+body.lite .badge,.tag{filter:brightness(.9)}
+body.lite .stat-card{background:#fff;border-color:var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+body.lite .fi{background:var(--s2);border-color:var(--bd)}
+body.lite .ss{background:var(--s2);border-color:var(--bd)}
+body.lite .toast{box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.theme-btn{background:none;border:1px solid var(--bd);color:var(--dim);font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer;font-family:var(--mono);transition:all .15s;letter-spacing:.5px;line-height:1.4}
+.theme-btn:hover{border-color:var(--c1);color:var(--c1)}
+
+
+.sb-footer{padding:8px 14px;border-top:1px solid var(--bd);font-size:8px;color:var(--dim);letter-spacing:.8px;line-height:1.6;font-family:var(--mono)}
+.sb-footer span{color:var(--c1);font-weight:700}
+
+/* AUTO LOGOUT WARNING */
+#al-warn{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#c48a00;color:#000;padding:8px 16px;font-size:12px;font-weight:700;text-align:center;font-family:var(--mono)}
+#al-warn button{margin-left:12px;padding:3px 12px;background:#000;color:#ffc832;border:none;border-radius:3px;cursor:pointer;font-weight:700;font-size:11px}
+/* RACK ZONE GROUPS */
+.zone-group{margin-bottom:22px}
+.zone-hdr{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:2px;color:var(--c1);text-transform:uppercase;padding:5px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:3px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.zone-hdr span{color:var(--dim);font-weight:400}
+.rack-hdr{display:flex;justify-content:space-between;align-items:center}
+.rack-del{background:none;border:none;color:var(--dim);font-size:12px;cursor:pointer;padding:2px 5px;border-radius:2px;transition:color .15s}
+.rack-del:hover{color:var(--c5)}
+/* HISTORY TAB */
+.hist-row{padding:8px 10px;border-bottom:1px solid var(--bd);font-size:10px;display:flex;gap:10px;align-items:flex-start}
+.hist-row:last-child{border-bottom:none}
+.hist-action{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+.ha-create{background:rgba(0,232,122,.15);color:var(--c2)}
+.ha-update{background:rgba(0,200,255,.12);color:var(--c1)}
+.ha-relocate{background:rgba(255,200,50,.15);color:var(--c4)}
+.ha-status{background:rgba(176,136,255,.15);color:var(--c6)}
+.ha-delete{background:rgba(255,60,95,.15);color:var(--c5)}
+.hist-detail{flex:1;color:var(--tx);line-height:1.5}
+.hist-meta{color:var(--dim);font-size:9px;white-space:nowrap;flex-shrink:0}
 /* APP */
 #app{position:relative;z-index:1;display:none;flex;height:100vh;overflow:hidden}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 15% 0%,rgba(0,200,255,.04) 0%,transparent 55%),radial-gradient(ellipse 60% 40% at 85% 100%,rgba(0,232,122,.03) 0%,transparent 55%);pointer-events:none;z-index:0}
@@ -87,6 +159,20 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .kpi-s{font-size:9px;color:var(--dim)}
 /* TABLE */
 .tw{overflow-x:auto;margin-top:6px}
+
+/* RESIZABLE COLUMNS */
+#a-table th{position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
+#a-table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col-resize{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent;z-index:2}
+.col-resize:hover,.col-resize.dragging{background:var(--c1);opacity:.5}
+.col-hidden{display:none!important}
+.col-tog{padding:3px 9px;border:1px solid var(--bd);border-radius:3px;font-size:9px;cursor:pointer;font-family:var(--mono);background:var(--s3);color:var(--tx);letter-spacing:.5px;transition:all .12s}
+.col-tog.active{background:var(--c1);color:#000;border-color:var(--c1);font-weight:700}
+#a-table{border-collapse:collapse}
+.pg-btn{padding:3px 8px;border:1px solid var(--bd);border-radius:3px;background:var(--s2);color:var(--tx);cursor:pointer;font-size:10px;font-family:var(--mono)}
+.pg-btn:hover{border-color:var(--c1);color:var(--c1)}
+.pg-btn.active{background:var(--c1);color:#000;border-color:var(--c1)}
+
 table{width:100%;border-collapse:collapse;white-space:nowrap}
 th{background:var(--s2);color:var(--dim);font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;font-weight:800;padding:8px 9px;text-align:left;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:2}
 td{padding:7px 9px;border-bottom:1px solid rgba(26,45,74,.4);font-size:11px;color:var(--tx);vertical-align:middle;max-width:180px;overflow:hidden;text-overflow:ellipsis}
@@ -201,11 +287,6 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
     <div class="lfg"><label>Username</label><input id="li-u" type="text" placeholder="username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/></div>
     <div class="lfg"><label>Password</label><input id="li-p" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
     <button class="l-btn" onclick="doLogin()">Sign In →</button>
-    <div class="l-hint">
-      <div class="l-hint-t">Demo Credentials — Click to fill</div>
-      <div class="l-cred" onclick="fillC('admin','Admin@123')"><span class="lc-r lc-admin">ADMIN</span><span class="lc-u">admin</span><span class="lc-p">Admin@123</span></div>
-      <div class="l-cred" onclick="fillC('superuser','Super@123')"><span class="lc-r lc-super">SUPERUSER</span><span class="lc-u">superuser</span><span class="lc-p">Super@123</span></div>
-      <div class="l-cred" onclick="fillC('viewer','Viewer@123')"><span class="lc-r lc-user">USER</span><span class="lc-u">viewer</span><span class="lc-p">Viewer@123</span></div>
     </div>
   </div>
 </div>
@@ -214,7 +295,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
 <div id="app" style="display:none;flex;height:100vh;overflow:hidden">
 <nav id="sb">
   <div class="sb-top">
-    <div class="sb-lt">⬡ DC MANAGER</div><div class="sb-ls">OPERATIONS PLATFORM</div>
+    <div style="display:flex;align-items:center;justify-content:space-between"><div><div class="sb-lt">⬡ DC MANAGER</div><div class="sb-ls">OPERATIONS PLATFORM</div></div><button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">◑</button></div>
     <div class="sb-usr"><div class="u-av" id="sb-av"></div><div class="u-info"><div class="u-name" id="sb-un"></div><div class="u-role" id="sb-ur"></div></div><button class="u-out" onclick="doLogout()" title="Sign out">⏻</button></div>
   </div>
   <div class="sb-nav">
@@ -241,6 +322,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
     <div class="ss"><span class="ss-k">Low Stock</span><span class="ss-v w" id="ss-ls">0</span></div>
     <div class="ss"><span class="ss-k">Connections</span><span class="ss-v" id="ss-co">0</span></div>
   </div>
+  <div class="sb-footer">v2.1.0 &nbsp;·&nbsp; DEVELOPED BY<br/><span>PKLAKKOJU</span></div>
 </nav>
 <div id="mn">
   <div class="topbar">
@@ -258,17 +340,44 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
       <div class="sh"><span class="sh-t">Recent Assets</span></div><div id="d-recent"></div>
     </div>
     <div class="view" id="view-assets">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <!-- Toolbar -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
         <div class="srch" style="flex:1;min-width:170px"><span style="color:var(--dim)">⌕</span><input id="a-srch" placeholder="Search hostname, IP, serial, rack…" oninput="renderAssets()"/></div>
-        <select style="width:auto;padding:5px 9px" id="af-t" onchange="renderAssets()"><option value="">All Types</option><option>Server</option><option>Switch</option><option>Router</option><option>Firewall</option><option>LIU</option><option>Patch Panel</option><option>PDU</option><option>KVM</option><option>Other</option></select>
+        <select style="width:auto;padding:5px 9px" id="af-t" onchange="renderAssets()"><option value="">All Types</option><option>Server</option><option>VM</option><option>Switch</option><option>Router</option><option>Firewall</option><option>LIU</option><option>Patch Panel</option><option>PDU</option><option>KVM</option><option>Other</option></select>
         <select style="width:auto;padding:5px 9px" id="af-s" onchange="renderAssets()"><option value="">All Status</option><option>Online</option><option>Offline</option><option>Maintenance</option><option>Decommissioned</option><option>Spare</option></select>
+        <select style="width:auto;padding:5px 9px" id="af-pp" onchange="renderAssets()" title="Items per page"><option value="50">50 / page</option><option value="100">100 / page</option><option value="all">All</option></select>
+        <button class="btn bs bsm" onclick="toggleColChooser()" title="Choose columns" style="font-size:11px">⊞ Columns</button>
+        <button class="btn bd_ bsm" id="bulk-del-btn" style="display:none" onclick="bulkDeleteAssets()">🗑 Delete Selected (<span id="bulk-count">0</span>)</button>
       </div>
-      <div class="tw"><table><thead><tr id="a-head"></tr></thead><tbody id="atbody"></tbody></table>
-        <div id="a-empty" class="empty" style="display:none"><div class="emi">◻</div><p>No assets yet.</p></div></div>
+      <!-- Column Chooser Dropdown -->
+      <div id="col-chooser" style="display:none;background:var(--s2);border:1px solid var(--bd2);border-radius:5px;padding:12px;margin-bottom:8px;display:none">
+        <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:8px">Toggle Columns</div>
+        <div id="col-chooser-items" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <!-- Table -->
+      <div class="tw" style="overflow-x:auto">
+        <table id="a-table" style="min-width:900px;table-layout:fixed">
+          <thead><tr id="a-head"></tr></thead>
+          <tbody id="atbody"></tbody>
+        </table>
+        <div id="a-empty" class="empty" style="display:none"><div class="emi">◻</div><p>No assets yet.</p></div>
+      </div>
+      <!-- Pagination -->
+      <div id="a-pgbar" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--dim)">
+        <span id="a-pginfo"></span>
+        <div id="a-pgbtns" style="display:flex;gap:4px"></div>
+      </div>
     </div>
     <div class="view" id="view-racks">
-      <div class="sh"><span class="sh-t">Rack Diagrams</span><div class="sh-sep"></div><button class="btn bs bsm" id="btn-nr" onclick="wrapWrite(openRackM)">+ New Rack</button></div>
-      <div class="rack-grid" id="rack-grid"></div>
+      <div class="sh"><span class="sh-t">Rack Diagrams</span><div class="sh-sep"></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="rk-zone"  style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Datacenters</option></select>
+          <select id="rk-zone2" style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Zones</option></select>
+          <select id="rk-row"   style="padding:4px 8px;font-size:11px" onchange="renderRackGrid()"><option value="">All Rows</option></select>
+          <button class="btn bs bsm" id="btn-nr" onclick="wrapWrite(openRackM)">+ New Rack</button>
+        </div>
+      </div>
+      <div id="rack-grid"></div>
       <div id="rack-empty" class="empty" style="display:none"><div class="emi">▤</div><p>No racks defined.</p></div>
     </div>
     <div class="view" id="view-stock">
@@ -293,7 +402,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
           <div class="sh"><span class="sh-t">Export Data</span></div>
           <div style="background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:16px;margin-bottom:12px">
             <div style="font-size:12px;font-weight:700;color:var(--hi);margin-bottom:6px">Export to Excel</div>
-            <div style="font-size:10px;color:var(--dim);margin-bottom:14px;line-height:1.6">Exports all data (Assets, Stock, Connectivity) plus filled import templates with your current data as reference.</div>
+            <div style="font-size:10px;color:var(--dim);margin-bottom:14px;line-height:1.6">Exports all data (Assets, Stock, Connectivity) with all fields: Prov IP, BMC IP, Data IP, Backup IP, PO Number, EOL Date, App Owner and all custom hardware fields.</div>
             <button class="btn bp" onclick="doExport()">↓ Export All to Excel</button>
           </div>
           <div style="background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:16px">
@@ -349,6 +458,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
 </div>
 </div>
 <div id="toast"></div>
+<div id="al-warn">Session expiring in <span id="al-secs">60</span>s due to inactivity. <button onclick="resetIdleTimer()">Stay Logged In</button></div>
 
 <!-- MODALS -->
 <!-- ASSET MODAL -->
@@ -366,11 +476,11 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
     <div class="tp on" id="mAsset-tab-gen">
       <div class="f3">
         <div class="fg"><label>Hostname *</label><input id="fa-host" placeholder="web-prod-01"/></div>
-        <div class="fg"><label>Type *</label><select id="fa-type"><option>Server</option><option>Switch</option><option>Router</option><option>Firewall</option><option>LIU</option><option>Patch Panel</option><option>PDU</option><option>KVM</option><option>Other</option></select></div>
+        <div class="fg"><label>Type *</label><select id="fa-type"><option>Server</option><option>VM</option><option>Switch</option><option>Router</option><option>Firewall</option><option>LIU</option><option>Patch Panel</option><option>PDU</option><option>KVM</option><option>Other</option></select></div>
         <div class="fg"><label>Status</label><select id="fa-status"><option>Online</option><option>Offline</option><option>Maintenance</option><option>Decommissioned</option><option>Spare</option></select></div>
       </div>
       <div class="f3">
-        <div class="fg"><label>Datacenter</label><input id="fa-dc" placeholder="DC1-Mumbai"/></div>
+        <div class="fg"><label>Datacenter</label><input id="fa-dc" placeholder="HYN-POD-2"/></div>
         <div class="fg"><label>Rack ID</label><input id="fa-rack" placeholder="R-01"/></div>
         <div class="fg"><label>U Start / Height</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><input id="fa-us" type="number" placeholder="U" min="1" max="48"/><input id="fa-uh" type="number" placeholder="H" min="1" max="10" value="1"/></div></div>
       </div>
@@ -378,19 +488,28 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
         <div class="fg"><label>Asset Tag</label><input id="fa-atag" placeholder="TAG-001"/></div>
         <div class="fg"><label>Serial Number</label><input id="fa-sn" placeholder="SN1234567"/></div>
       </div>
+      <div class="f3">
+        <div class="fg"><label>PO Number</label><input id="fa-po" placeholder="PO-2024-001"/></div>
+        <div class="fg"><label>EOL Date</label><input id="fa-eol" type="date"/></div>
+        <div class="fg"><label>App / Asset Owner</label><input id="fa-owner" placeholder="John Smith / IT Ops"/></div>
+      </div>
       <div class="fg"><label>Notes / Purpose</label><textarea id="fa-notes" rows="2"></textarea></div>
     </div>
     <div class="tp" id="mAsset-tab-hw"><div id="hw-fields-form"></div></div>
     <div class="tp" id="mAsset-tab-net">
       <div class="f2">
-        <div class="fg"><label>Management IP</label><input id="fa-ip" placeholder="192.168.10.10"/></div>
-        <div class="fg"><label>OOB / IPMI / iDRAC IP</label><input id="fa-oob" placeholder="10.0.1.10"/></div>
+        <div class="fg"><label>Provisioning IP (Prov IP)</label><input id="fa-ip" placeholder="192.168.10.10"/></div>
+        <div class="fg"><label>BMC IP (iDRAC / iLO / IPMI)</label><input id="fa-oob" placeholder="10.0.1.10"/></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>Data IP</label><input id="fa-dataip" placeholder="10.10.1.10"/></div>
+        <div class="fg"><label>Backup IP (BKUP IP)</label><input id="fa-bkupip" placeholder="10.20.1.10"/></div>
       </div>
       <div class="f2">
         <div class="fg"><label>MAC Address (Mgmt)</label><input id="fa-mac" placeholder="aa:bb:cc:dd:ee:ff"/></div>
         <div class="fg"><label>Mgmt VLAN</label><input id="fa-vlan" placeholder="10"/></div>
       </div>
-      <div class="fg"><label>Additional IPs / Notes</label><textarea id="fa-ipn" rows="3" placeholder="eth0: 192.168.10.11&#10;eth1: 10.10.1.11 (storage)"></textarea></div>
+      <div class="fg"><label>Additional IPs / Notes</label><textarea id="fa-ipn" rows="2" placeholder="eth0: 192.168.10.11&#10;eth1: 10.10.1.11 (storage)"></textarea></div>
     </div>
     <div class="tp" id="mAsset-tab-cx">
       <div style="font-size:10px;color:var(--dim);margin-bottom:10px">Add port connections: <span style="color:var(--c1)">Server Slot/Port → LIU-A → LIU-B → Switch Port</span></div>
@@ -501,13 +620,22 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
 <!-- RACK MODAL -->
 <div class="mo" id="mRack">
 <div class="mbox mbox-xs">
-  <div class="mhdr"><span class="mtitle">New Rack</span><button class="mx" onclick="cm('mRack')">×</button></div>
+  <div class="mhdr"><span class="mtitle" id="mRack-title">New Rack</span><button class="mx" onclick="cm('mRack')">×</button></div>
   <div class="mbody">
-    <div class="f2"><div class="fg"><label>Rack ID *</label><input id="fr-id" placeholder="R-01"/></div><div class="fg"><label>Datacenter</label><input id="fr-dc" placeholder="DC1-Mumbai"/></div></div>
-    <div class="f2"><div class="fg"><label>Row Label</label><input id="fr-row" placeholder="A"/></div><div class="fg"><label>Total U</label><input id="fr-u" type="number" value="42" min="10" max="60"/></div></div>
-    <div class="fg"><label>Notes</label><textarea id="fr-notes" rows="2"></textarea></div>
+    <div class="f2">
+      <div class="fg"><label>Rack ID *</label><input id="fr-id" placeholder="R-01"/></div>
+      <div class="fg"><label>Total U</label><input id="fr-u" type="number" value="42" min="4" max="60"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Datacenter</label><input id="fr-dc" placeholder="HYN-POD-2"/></div>
+      <div class="fg"><label>Zone</label><input id="fr-zone" placeholder="Zone-1"/></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Row</label><input id="fr-row" placeholder="Row-1"/></div>
+      <div class="fg"><label>Notes</label><input id="fr-notes" placeholder="Optional notes"/></div>
+    </div>
   </div>
-  <div class="mftr"><button class="btn bs" onclick="cm('mRack')">Cancel</button><button class="btn bp" onclick="saveRack()">Create Rack</button></div>
+  <div class="mftr"><button class="btn bs" onclick="cm('mRack')">Cancel</button><button class="btn bp" id="fr-save-btn" onclick="saveRack()">Create Rack</button></div>
 </div>
 </div>
 
@@ -542,7 +670,7 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
   <div class="mbody">
     <input type="hidden" id="ff-id"/>
     <div class="fg"><label>Field Label *</label><input id="ff-label" placeholder="e.g. Server Type, GPU Model…"/></div>
-    <div class="fg"><label>Field Key (internal) *</label><input id="ff-key" placeholder="e.g. server_type, gpu_model"/></div>
+    <div id="ff-key-wrap"><div class="fg"><label>Field Key (internal) *</label><input id="ff-key" placeholder="e.g. server_type, gpu_model"/></div></div>
     <div class="f2">
       <div class="fg"><label>Input Type</label><select id="ff-type"><option value="text">Text</option><option value="number">Number</option><option value="select">Dropdown</option><option value="textarea">Textarea</option></select></div>
       <div class="fg"><label>Required?</label><select id="ff-req"><option value="0">Optional</option><option value="1">Required</option></select></div>
@@ -556,9 +684,16 @@ textarea{resize:vertical;min-height:50px;font-family:var(--mono);font-size:10px}
 
 <!-- DETAIL MODAL -->
 <div class="mo" id="mDetail">
-<div class="mbox">
+<div class="mbox mbox-lg">
   <div class="mhdr"><span class="mtitle" id="mDt">Asset Detail</span><button class="mx" onclick="cm('mDetail')">×</button></div>
-  <div class="mbody" id="mDb"></div>
+  <div class="tabrow" style="padding:0 16px">
+    <div class="tb on" onclick="stab('mDetail','info',this)">Info</div>
+    <div class="tb" id="hist-tab-btn" onclick="stab('mDetail','hist',this);loadAssetHistory()">History</div>
+  </div>
+  <div class="tp on mbody" id="mDetail-tab-info"><div id="mDb"></div></div>
+  <div class="tp" id="mDetail-tab-hist" style="min-height:220px;max-height:440px;overflow-y:auto">
+    <div id="mDf-hist"><div style="padding:20px;text-align:center;color:var(--dim);font-size:11px">Click History tab to load…</div></div>
+  </div>
   <div class="mftr" id="mDf"></div>
 </div>
 </div>
@@ -632,8 +767,6 @@ async function apiUpload(path, formData){
 // ─────────────────────────────────────────────
 // AUTH
 // ─────────────────────────────────────────────
-function fillC(u,p){ sv('li-u',u); sv('li-p',p); }
-
 async function doLogin(){
   const u=(fv('li-u')||'').toLowerCase(), p=fv('li-p')||'';
   if(!u||!p){ showErr('Enter username and password.'); return; }
@@ -648,9 +781,37 @@ async function doLogin(){
     $('lp').style.display='none';
     $('app').style.display='flex';
     initApp();
+    startIdleWatch();
   }catch(e){ showErr('Login failed: '+e.message); }
 }
 function showErr(m){ $('l-err').textContent=m; $('l-err').style.display='block'; }
+
+// ── AUTO-LOGOUT (10 min inactivity) ──────────────────────────────────
+const IDLE_LIMIT = 10 * 60 * 1000;  // 10 minutes
+const WARN_BEFORE = 60 * 1000;       // warn 60s before
+let _idleTimer=null, _warnTimer=null, _warnInterval=null;
+
+function resetIdleTimer(){
+  clearTimeout(_idleTimer); clearTimeout(_warnTimer); clearInterval(_warnInterval);
+  const w=$('al-warn'); if(w) w.style.display='none';
+  if(!TOKEN) return;
+  _warnTimer = setTimeout(()=>{
+    const w=$('al-warn'); if(w) w.style.display='block';
+    let s=60; const sc=$('al-secs'); if(sc) sc.textContent=s;
+    _warnInterval = setInterval(()=>{
+      s--; if(sc) sc.textContent=s;
+      if(s<=0){ clearInterval(_warnInterval); doLogout(); toast('Logged out due to inactivity','err'); }
+    },1000);
+  }, IDLE_LIMIT - WARN_BEFORE);
+  _idleTimer = setTimeout(()=>{ doLogout(); toast('Logged out due to inactivity','err'); }, IDLE_LIMIT);
+}
+function startIdleWatch(){
+  ['mousemove','keydown','mousedown','touchstart','scroll'].forEach(ev=>
+    document.addEventListener(ev, resetIdleTimer, {passive:true})
+  );
+  resetIdleTimer();
+}
+
 function doLogout(){
   CU=null; TOKEN=null;
   sessionStorage.removeItem('dcm_tok'); sessionStorage.removeItem('dcm_user');
@@ -659,6 +820,20 @@ function doLogout(){
 }
 
 // ── ROLE HELPERS ──
+
+function toggleTheme(){
+  const lite=document.body.classList.toggle('lite');
+  localStorage.setItem('dcm_theme',lite?'lite':'dark');
+  const btn=$('theme-btn');
+  if(btn) btn.textContent=lite?'●':'◑';
+}
+(function initTheme(){
+  if(localStorage.getItem('dcm_theme')==='lite'){
+    document.body.classList.add('lite');
+    document.addEventListener('DOMContentLoaded',()=>{const b=$('theme-btn');if(b)b.textContent='●';});
+  }
+})();
+
 function isAdmin(){ return CU?.role==='superuser'; }
 function isSuperOrAdmin(){ return CU?.role==='superuser'||CU?.role==='admin'; }
 function canWrite(){ return isSuperOrAdmin(); }
@@ -778,7 +953,7 @@ async function renderDash(){
     // Recent assets
     const assets = await api('GET','/assets');
     const rec=[...assets].slice(-8).reverse();
-    $('d-recent').innerHTML=rec.length?`<table><thead><tr><th>Status</th><th>Hostname</th><th>Type</th><th>DC/Rack</th><th>Mgmt IP</th></tr></thead><tbody>${rec.map(a=>`<tr><td>${pdot(a.status)}${a.status}</td><td class="hi_">${a.hostname}</td><td><span class="tag">${a.asset_type}</span></td><td class="mn_">${[a.datacenter,a.rack_id].filter(Boolean).join('/')||'—'}</td><td class="mn_">${a.mgmt_ip||'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty"><p>No assets yet.</p></div>';
+    $('d-recent').innerHTML=rec.length?`<table><thead><tr><th>Status</th><th>Hostname</th><th>Type</th><th>DC/Rack</th><th>Prov IP</th></tr></thead><tbody>${rec.map(a=>`<tr><td>${pdot(a.status)}${a.status}</td><td class="hi_">${a.hostname}</td><td><span class="tag">${a.asset_type}</span></td><td class="mn_">${[a.datacenter,a.rack_id].filter(Boolean).join('/')||'—'}</td><td class="mn_">${a.mgmt_ip||'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty"><p>No assets yet.</p></div>';
 
     // Stock summary
     const stock = await api('GET','/stock');
@@ -797,36 +972,167 @@ async function renderDash(){
 // ─────────────────────────────────────────────
 // ASSETS
 // ─────────────────────────────────────────────
+// ── Assets table state ──────────────────────────────────────────────
+let _assetList=[], _assetPage=1;
+const ACOLS=[
+  {id:'chk',     label:'',          w:36,  always:true},
+  {id:'status',  label:'Status',    w:80,  always:true},
+  {id:'hostname',label:'Hostname',  w:200, always:true},
+  {id:'type',    label:'Type',      w:90,  on:true},
+  {id:'prov_ip', label:'Prov IP',   w:130, on:true},
+  {id:'bmc_ip',  label:'BMC IP',    w:130, on:true},
+  {id:'data_ip', label:'Data IP',   w:120, on:false},
+  {id:'bkup_ip', label:'Backup IP', w:120, on:false},
+  {id:'dc_rack', label:'DC / Rack / U', w:200, on:true},
+  {id:'make',    label:'Make/Model',w:160, on:true},
+  {id:'serial',  label:'Serial',    w:130, on:true},
+  {id:'po',      label:'PO #',      w:110, on:true},
+  {id:'eol',     label:'EOL',       w:100, on:true},
+  {id:'owner',   label:'App Owner', w:130, on:false},
+  {id:'actions', label:'Actions',   w:105, always:true},
+];
+function visibleCols(){ return ACOLS.filter(c=>c.always||c.on); }
+
+function buildColChooser(){
+  const el=$('col-chooser-items'); if(!el) return;
+  el.innerHTML=ACOLS.filter(c=>!c.always).map(c=>
+    `<span class="col-tog ${c.on?'active':''}" onclick="toggleCol('${c.id}',this)">${c.label}</span>`
+  ).join('');
+}
+function toggleColChooser(){
+  const el=$('col-chooser'); if(!el) return;
+  const shown = el.style.display==='block';
+  el.style.display=shown?'none':'block';
+  if(!shown) buildColChooser();
+}
+function toggleCol(id,btn){
+  const col=ACOLS.find(c=>c.id===id);
+  if(!col||col.always) return;
+  col.on=!col.on;
+  btn.classList.toggle('active',col.on);
+  renderAssetsTable();
+}
+function initColResize(){
+  const ths=$('a-head')?.querySelectorAll('th')||[];
+  ths.forEach((th,i)=>{
+    let h2=th.querySelector('.col-resize'); if(h2) h2.remove();
+    const handle=document.createElement('div');
+    handle.className='col-resize';
+    let startX,startW;
+    handle.addEventListener('mousedown',e=>{
+      startX=e.clientX; startW=th.offsetWidth;
+      handle.classList.add('dragging');
+      const mm=ev=>{ const nw=Math.max(50,startW+(ev.clientX-startX)); th.style.width=nw+'px'; const vc=visibleCols(); if(vc[i]) vc[i].w=nw; };
+      const mu=()=>{ handle.classList.remove('dragging'); document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); };
+      document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu);
+      e.preventDefault();
+    });
+    th.appendChild(handle);
+  });
+}
+function getPerPage(){ const v=$('af-pp')?.value||'50'; return v==='all'?999999:parseInt(v)||50; }
+
 async function renderAssets(){
-  $('a-head').innerHTML=`<th>Status</th><th>Hostname</th><th>Type</th><th>Server Type</th><th>Mgmt IP</th><th>DC / Rack / U</th><th>Make / Model</th><th>RAM</th><th>Storage</th><th>Serial</th><th>Actions</th>`;
   loading('atbody');
   try{
     const q=$('a-srch')?.value||'',t=$('af-t')?.value||'',s=$('af-s')?.value||'';
     const params=new URLSearchParams();
     if(q)params.set('q',q);if(t)params.set('type',t);if(s)params.set('status',s);
-    const list = await api('GET',`/assets?${params}`);
-    const tb=$('atbody'),em=$('a-empty');
-    if(!list.length){tb.innerHTML='';em.style.display='';return;}em.style.display='none';
-    const ro=!canWrite();
-    tb.innerHTML=list.map(a=>{
-      const hw=a.hw_data||{};
-      return `<tr>
-        <td>${sbadge(a.status)}</td>
-        <td class="hi_" style="cursor:pointer" onclick="showDetail('${a.id}')">${a.hostname}</td>
-        <td><span class="tag">${a.asset_type}</span></td>
-        <td><span class="tag" style="color:var(--c3)">${a.server_type||'—'}</span></td>
-        <td class="mn_">${a.mgmt_ip||'—'}</td>
-        <td class="mn_">${[a.datacenter,a.rack_id,a.u_start?'U'+a.u_start:''].filter(Boolean).join(' / ')||'—'}</td>
-        <td>${[hw.make,hw.model].filter(Boolean).join(' ')||'—'}</td>
-        <td class="mn_">${hw.ram||'—'}</td>
-        <td class="mn_">${hw.stor||'—'}</td>
-        <td class="mn_" style="font-size:9px">${a.serial_number||'—'}</td>
-        <td style="white-space:nowrap">${ro?`<button class="btn bs bxs" onclick="showDetail('${a.id}')">View</button>`:
-          `<button class="btn bs bxs" onclick="openAssetM('${a.id}')">Edit</button>
-           <button class="btn bd_ bxs" style="margin-left:2px" onclick="delAsset('${a.id}')">Del</button>`}
-        </td></tr>`;
-    }).join('');
+    _assetList=await api('GET',`/assets?${params}`);
+    _assetPage=1;
+    _selectedIds.clear();
+    updateBulkBar();
+    renderAssetsTable();
   }catch(e){ toast('Failed to load assets: '+e.message,'err'); }
+}
+
+function renderAssetsTable(){
+  const tb=$('atbody'),em=$('a-empty'),pginfo=$('a-pginfo'),pgbtns=$('a-pgbtns');
+  if(!tb) return;
+  const perPage=getPerPage();
+  const total=_assetList.length;
+  const totalPages=Math.ceil(total/perPage)||1;
+  if(_assetPage>totalPages) _assetPage=1;
+  const start=(_assetPage-1)*perPage, end=Math.min(start+perPage,total);
+  const page=_assetList.slice(start,end);
+  if(!total){tb.innerHTML='';if(em)em.style.display='';if(pginfo)pginfo.textContent='';if(pgbtns)pgbtns.innerHTML='';return;}
+  if(em)em.style.display='none';
+  const cols=visibleCols();
+  $('a-head').innerHTML=cols.map(c=>{
+    if(c.id==='chk') return `<th style="width:${c.w}px;min-width:36px;text-align:center;position:relative"><input type="checkbox" id="chk-all" onclick="toggleAllChk(this)" style="cursor:pointer;accent-color:var(--c1)"/></th>`;
+    return `<th style="width:${c.w}px;min-width:50px;position:relative">${c.label}<div class="col-resize"></div></th>`;
+  }).join('');
+  initColResize();
+  const ro=!canWrite();
+  tb.innerHTML=page.map(a=>{
+    const hw=a.hw_data||{};
+    return '<tr>'+cols.map(c=>{
+      switch(c.id){
+        case 'chk':     return `<td style="text-align:center;padding:0 4px"><input type="checkbox" class="row-chk" data-id="${a.id}" onchange="onRowChk(this)" style="cursor:pointer;accent-color:var(--c1)"/></td>`;
+        case 'status':  return `<td>${sbadge(a.status)}</td>`;
+        case 'hostname':return `<td class="hi_" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis" onclick="showDetail('${a.id}')" title="${a.hostname}">${a.hostname}</td>`;
+        case 'type':    return `<td><span class="tag">${a.asset_type}</span></td>`;
+        case 'prov_ip': return `<td class="mn_">${a.mgmt_ip||'—'}</td>`;
+        case 'bmc_ip':  return `<td class="mn_">${a.oob_ip||'—'}</td>`;
+        case 'data_ip': return `<td class="mn_">${hw.data_ip||'—'}</td>`;
+        case 'bkup_ip': return `<td class="mn_">${hw.bkup_ip||'—'}</td>`;
+        case 'dc_rack': return `<td class="mn_" title="${[a.datacenter,a.rack_id,a.u_start?'U'+a.u_start:''].filter(Boolean).join(' / ')}">${[a.datacenter,a.rack_id,a.u_start?'U'+a.u_start:''].filter(Boolean).join(' / ')||'—'}</td>`;
+        case 'make':    return `<td style="overflow:hidden;text-overflow:ellipsis" title="${[hw.make,hw.model].filter(Boolean).join(' ')}">${[hw.make,hw.model].filter(Boolean).join(' ')||'—'}</td>`;
+        case 'serial':  return `<td class="mn_" style="font-size:9px">${a.serial_number||'—'}</td>`;
+        case 'po':      return `<td class="mn_" style="font-size:9px">${hw.po_number||'—'}</td>`;
+        case 'eol':     return `<td class="mn_" style="font-size:9px">${hw.eol_date||'—'}</td>`;
+        case 'owner':   return `<td class="mn_" style="font-size:9px;overflow:hidden;text-overflow:ellipsis" title="${hw.app_owner||''}">${hw.app_owner||'—'}</td>`;
+        case 'actions': return `<td style="white-space:nowrap">${ro?`<button class="btn bs bxs" onclick="showDetail('${a.id}')">View</button>`:`<button class="btn bs bxs" onclick="openAssetM('${a.id}')">Edit</button><button class="btn bd_ bxs" style="margin-left:2px" onclick="delAsset('${a.id}')">Del</button>`}</td>`;
+        default: return '<td>—</td>';
+      }
+    }).join('')+'</tr>';
+  }).join('');
+  if(pginfo) pginfo.textContent=total>perPage?`Showing ${start+1}–${end} of ${total} assets`:`${total} assets`;
+  if(pgbtns){
+    if(perPage>=999999||totalPages<=1){pgbtns.innerHTML='';return;}
+    const btns=[`<button class="pg-btn${_assetPage===1?' active':''}" onclick="_assetPage=1;renderAssetsTable()">«</button>`];
+    for(let p=Math.max(1,_assetPage-2);p<=Math.min(totalPages,_assetPage+2);p++) btns.push(`<button class="pg-btn${p===_assetPage?' active':''}" onclick="_assetPage=${p};renderAssetsTable()">${p}</button>`);
+    btns.push(`<button class="pg-btn${_assetPage===totalPages?' active':''}" onclick="_assetPage=${totalPages};renderAssetsTable()">»</button>`);
+    pgbtns.innerHTML=btns.join('');
+  }
+}
+// ── ASSET SELECT + BULK DELETE ────────────────────────────────────────
+let _selectedIds=new Set();
+function onRowChk(el){
+  const id=el.dataset.id;
+  if(el.checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  updateBulkBar();
+}
+function toggleAllChk(el){
+  document.querySelectorAll('.row-chk').forEach(c=>{
+    c.checked=el.checked;
+    const id=c.dataset.id;
+    if(el.checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  });
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const n=_selectedIds.size;
+  const btn=$('bulk-del-btn'), cnt=$('bulk-count');
+  if(btn) btn.style.display=n>0&&canWrite()?'':'none';
+  if(cnt) cnt.textContent=n;
+  // sync select-all state
+  const all=document.querySelectorAll('.row-chk');
+  const ca=$('chk-all');
+  if(ca&&all.length) ca.checked=all.length>0&&[...all].every(c=>c.checked);
+}
+async function bulkDeleteAssets(){
+  const ids=[..._selectedIds];
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} selected asset${ids.length>1?'s':''}? This cannot be undone.`)) return;
+  let done=0,errs=0;
+  for(const id of ids){
+    try{ await api('DELETE',`/assets/${id}`); done++; }
+    catch{ errs++; }
+  }
+  _selectedIds.clear();
+  toast(`Deleted ${done} asset${done>1?'s':''}${errs?` (${errs} failed)`:''}`, errs?'err':'ok');
+  renderAssets(); renderDash();
 }
 
 function renderHWFields(){
@@ -838,14 +1144,45 @@ function renderHWFields(){
 function buildFieldInput(f){
   const id=`fa-hw-${f.field_key}`;
   if(f.field_type==='select'){
-    const opts=(f.options||'').split('\n').filter(Boolean).map(o=>`<option>${o.trim()}</option>`).join('');
-    return `<div class="fg"><label>${f.label}${f.required?' *':''}</label><select id="${id}"><option value="">—</option>${opts}</select></div>`;
+    const rawOpts=(f.options||'').split('\n').filter(Boolean).map(o=>o.trim());
+    const hasOther=rawOpts.some(o=>o.toLowerCase()==='other');
+    const opts=rawOpts.map(o=>`<option>${o}</option>`).join('');
+    const otherId=`fa-hw-other-${f.field_key}`;
+    const otherHtml=hasOther?`<input id="${otherId}" placeholder="Specify…" style="display:none;margin-top:5px;width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:7px 9px;border-radius:3px;font-family:var(--fn);font-size:12px;outline:none"/>`:'' ;
+    const onChange=hasOther?`onchange="const oi=document.getElementById('${otherId}');if(oi)oi.style.display=this.value==='Other'?'block':'none'"`:'' ;
+    return `<div class="fg"><label>${f.label}${f.required?' *':''}</label><select id="${id}" ${onChange}><option value="">—</option>${opts}</select>${otherHtml}</div>`;
   }
   if(f.field_type==='textarea') return `<div class="fg"><label>${f.label}</label><textarea id="${id}" placeholder="${f.placeholder||''}"></textarea></div>`;
   return `<div class="fg"><label>${f.label}${f.required?' *':''}</label><input id="${id}" type="${f.field_type||'text'}" placeholder="${f.placeholder||''}"/></div>`;
 }
-function getHWValues(){ const v={}; HW_FIELDS.forEach(f=>{const el=$(`fa-hw-${f.field_key}`);if(el)v[f.field_key]=el.value.trim()||null;}); return v; }
-function setHWValues(hw){ HW_FIELDS.forEach(f=>sv(`fa-hw-${f.field_key}`,hw?.[f.field_key])); }
+function getHWValues(){
+  const v={};
+  HW_FIELDS.forEach(f=>{
+    const el=$('fa-hw-'+f.field_key);
+    if(!el) return;
+    if(el.tagName==='SELECT' && el.value==='Other'){
+      const oth=$('fa-hw-other-'+f.field_key);
+      v[f.field_key]=(oth&&oth.value.trim())?'Other: '+oth.value.trim():'Other';
+    } else {
+      v[f.field_key]=el.value.trim()||null;
+    }
+  });
+  return v;
+}
+function setHWValues(hw){
+  HW_FIELDS.forEach(f=>{
+    const val=hw?.[f.field_key];
+    const el=$('fa-hw-'+f.field_key);
+    if(!el||!val) return;
+    if(el.tagName==='SELECT' && val.startsWith('Other: ')){
+      el.value='Other';
+      const oth=$('fa-hw-other-'+f.field_key);
+      if(oth){oth.style.display='block';oth.value=val.replace('Other: ','');}
+    } else {
+      sv('fa-hw-'+f.field_key, val);
+    }
+  });
+}
 
 async function openAssetM(id){
   await loadHWFields(); renderHWFields();
@@ -855,10 +1192,13 @@ async function openAssetM(id){
   sv('fa-id',a?.id||'');sv('fa-host',a?.hostname);sv('fa-type',a?.asset_type||'Server');sv('fa-status',a?.status||'Online');
   sv('fa-dc',a?.datacenter);sv('fa-rack',a?.rack_id);sv('fa-us',a?.u_start);sv('fa-uh',a?.u_height||1);
   sv('fa-atag',a?.asset_tag);sv('fa-sn',a?.serial_number);sv('fa-notes',a?.notes);
-  sv('fa-ip',a?.mgmt_ip);sv('fa-oob',a?.oob_ip);sv('fa-mac',a?.mac_addr);sv('fa-vlan',a?.vlan);sv('fa-ipn',a?.extra_ips);
+  sv('fa-ip',a?.mgmt_ip);sv('fa-oob',a?.oob_ip);sv('fa-mac',a?.mac_addr);sv('fa-vlan',a?.vlan);sv('fa-ipn',a?.extra_ips);sv('fa-po',a?.hw_data?.po_number);sv('fa-eol',a?.hw_data?.eol_date);sv('fa-owner',a?.hw_data?.app_owner);sv('fa-dataip',a?.hw_data?.data_ip);sv('fa-bkupip',a?.hw_data?.bkup_ip);
   setHWValues({...a?.hw_data, server_type:a?.server_type});
   $('mAsset').querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',i===0));
   $('mAsset').querySelectorAll('.tp').forEach((p,i)=>p.classList.toggle('on',i===0));
+  // Reset detail modal tabs too
+  $('mDetail')?.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',i===0));
+  $('mDetail')?.querySelectorAll('.tp').forEach((p,i)=>p.classList.toggle('on',i===0));
   $('acx-list').innerHTML='';
   om('mAsset');
 }
@@ -897,16 +1237,32 @@ async function saveAsset(){
   const host=fv('fa-host'); if(!host){toast('Hostname required','err');return;}
   const id=$('fa-id').value;
   const hwVals=getHWValues();
+  const rack=fv('fa-rack');
+  const ustart=$('fa-us').value?parseInt($('fa-us').value):null;
+  const uheight=parseInt($('fa-uh').value)||1;
   const body={
     host, type:fv('fa-type')||'Server', status:fv('fa-status')||'Online',
     server_type:hwVals.server_type||null,
-    dc:fv('fa-dc'), rack:fv('fa-rack'),
-    ustart:$('fa-us').value?parseInt($('fa-us').value):null,
-    uheight:parseInt($('fa-uh').value)||1,
+    dc:fv('fa-dc'), rack,
+    ustart, uheight,
     atag:fv('fa-atag'), sn:fv('fa-sn'), notes:fv('fa-notes'),
     ip:fv('fa-ip'), oob:fv('fa-oob'), mac:fv('fa-mac'), vlan:fv('fa-vlan'), ipn:fv('fa-ipn'),
-    hw_data: hwVals
+    hw_data: {...hwVals, po_number:fv('fa-po')||null, eol_date:fv('fa-eol')||null, app_owner:fv('fa-owner')||null, data_ip:fv('fa-dataip')||null, bkup_ip:fv('fa-bkupip')||null}
   };
+  // ── Check slot conflict before saving ────────────────────────────
+  if(rack && ustart){
+    try{
+      const params=new URLSearchParams({rack,ustart,uheight});
+      if(id) params.set('exclude_id',id);
+      const conflicts=await api('GET',`/assets/check-slot?${params}`);
+      if(conflicts.length){
+        const names=conflicts.map(c=>`${c.hostname} (U${c.u_start}–${c.u_start+c.u_height-1})`).join(', ');
+        const u_end=ustart+uheight-1;
+        const msg=`⚠ Rack ${rack} U${ustart}${uheight>1?'–'+u_end:''} is already occupied by:\n\n${names}\n\nDo you want to proceed anyway?`;
+        if(!confirm(msg)) return;
+      }
+    }catch(e){ /* non-blocking — proceed if check fails */ }
+  }
   try{
     if(id) await api('PUT',`/assets/${id}`,body);
     else    await api('POST','/assets',body);
@@ -918,7 +1274,7 @@ async function saveAsset(){
         await api('POST','/connectivity',{src_host:host,src_slot:g('cx-ss'),src_port:g('cx-sp'),src_label:g('cx-sl'),liu_a_rack:g('cx-ar'),liu_a_host:g('cx-ah'),liu_a_port:g('cx-ap'),liu_b_rack:g('cx-br'),liu_b_host:g('cx-bh'),liu_b_port:g('cx-bp'),dst_host:g('cx-dh'),dst_port:g('cx-dp'),cable:'Fiber SM',speed:row.querySelector('.cx-spd')?.value,purpose:row.querySelector('.cx-purp')?.value});
       }
     }
-    cm('mAsset'); toast('Asset saved','ok'); renderAssets(); renderDash();
+    cm('mAsset'); toast('Asset saved','ok'); renderAssets(); renderDash(); if($('view-racks').classList.contains('on')) renderRacks(); else _allRackAssets=[];
   }catch(e){ toast('Save failed: '+e.message,'err'); }
 }
 
@@ -929,6 +1285,7 @@ async function delAsset(id){
 }
 
 async function showDetail(id){
+  _detailAssetId=id;
   try{
     const a=await api('GET',`/assets/${id}`);
     const myC=(await api('GET',`/connectivity?q=${a.hostname}`)).filter(c=>c.src_hostname===a.hostname||c.dst_hostname===a.hostname);
@@ -946,7 +1303,7 @@ async function showDetail(id){
         ${HW_FIELDS.map(f=>dc_(f.label,hw[f.field_key])).join('')}
       </div></div>
       <div class="dpanel"><div class="dpanel-t">Network</div><div class="dg">
-        ${dc_('Mgmt IP',a.mgmt_ip)}${dc_('OOB/IPMI',a.oob_ip)}${dc_('MAC',a.mac_addr)}${dc_('VLAN',a.vlan)}
+        ${dc_('Prov IP',a.mgmt_ip)}${dc_('BMC IP',a.oob_ip)}${dc_('Data IP',a.hw_data?.data_ip)}${dc_('Backup IP',a.hw_data?.bkup_ip)}${dc_('MAC',a.mac_addr)}${dc_('VLAN',a.vlan)}${dc_('PO Number',a.hw_data?.po_number)}${dc_('EOL Date',a.hw_data?.eol_date)}${dc_('App Owner',a.hw_data?.app_owner)}
       </div>${a.extra_ips?`<div style="margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--dim);white-space:pre-wrap">${a.extra_ips}</div>`:''}</div>
       ${myC.length?`<div class="dpanel"><div class="dpanel-t">Connections (${myC.length})</div>${myC.map(c=>connPathHtml(c)).join('')}</div>`:''}
       ${a.notes?`<div class="dpanel"><div class="dpanel-t">Notes</div><div style="font-size:11px;color:var(--tx);line-height:1.6">${a.notes}</div></div>`:''}`;
@@ -966,39 +1323,179 @@ function connPathHtml(c){
   return `<div class="cpath">${p.join('')}<span style="margin-left:6px;font-size:8px;color:var(--dim)">${c.cable_type||''} ${c.speed||''} ${c.purpose?'· '+c.purpose:''}</span></div>`;
 }
 
+
+// ── ASSET HISTORY ────────────────────────────────────────────────────
+let _detailAssetId=null;
+async function loadAssetHistory(){
+  if(!_detailAssetId) return;
+  const el=$('mDf-hist'); if(!el) return;
+  el.innerHTML='<div style="padding:16px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
+  try{
+    const hist=await api('GET',`/assets/${_detailAssetId}/history`);
+    if(!hist.length){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:11px">No history recorded yet.</div>'; return; }
+    const actionClass=a=>{
+      if(a==='ASSET_CREATED') return 'ha-create';
+      if(a==='ASSET_DELETED') return 'ha-delete';
+      if(a==='ASSET_RELOCATED') return 'ha-relocate';
+      if(a==='ASSET_STATUS_CHANGE') return 'ha-status';
+      return 'ha-update';
+    };
+    const actionLabel=a=>a.replace('ASSET_','').replace('_',' ');
+    el.innerHTML=hist.map(h=>`
+      <div class="hist-row">
+        <span class="hist-action ${actionClass(h.action)}">${actionLabel(h.action)}</span>
+        <span class="hist-detail">${h.detail||'—'}</span>
+        <span class="hist-meta">${h.username||'?'}<br/>${(h.created_at||'').replace('T',' ').slice(0,16)}</span>
+      </div>`).join('');
+  }catch(e){ el.innerHTML=`<div style="padding:16px;color:var(--c5);font-size:11px">Failed to load history: ${e.message}</div>`; }
+}
+
 // ─────────────────────────────────────────────
 // RACKS
 // ─────────────────────────────────────────────
+let _allRacks=[], _allRackAssets=[];
 async function renderRacks(){
-  loading('rack-grid');
   try{
-    const racks=await api('GET','/racks'), assets=await api('GET','/assets');
-    const allIds=[...new Set([...racks.map(r=>r.rack_id),...assets.map(a=>a.rack_id).filter(Boolean)])];
-    const grid=$('rack-grid'),em=$('rack-empty');
-    if(!allIds.length){grid.innerHTML='';em.style.display='';return;}em.style.display='none';
-    const mm={};racks.forEach(r=>mm[r.rack_id]=r);
-    grid.innerHTML=allIds.map(rid=>{
-      const meta=mm[rid]||{},totalU=meta.total_u||42;
-      const rA=assets.filter(a=>a.rack_id===rid);
-      const slots=[];
-      for(let u=totalU;u>=1;u--){
-        const asset=rA.find(a=>{const us=parseInt(a.u_start)||0,uh=parseInt(a.u_height)||1;return u>=us&&u<us+uh;});
-        if(asset){const us=parseInt(asset.u_start)||0,uh=parseInt(asset.u_height)||1;
-          if(u===us+uh-1){const tc={Server:'rs-srv',Switch:'rs-sw',Router:'rs-sw',Firewall:'rs-sw',LIU:'rs-liu','Patch Panel':'rs-liu',PDU:'rs-pdu'}[asset.asset_type]||'rs-oth';
-            slots.push(`<div class="rs" style="height:${uh*18}px"><div class="rs-n">${u}</div><div class="rs-c ${tc}" onclick="showDetail('${asset.id}')" title="${asset.hostname}">${asset.hostname}</div></div>`);
-          }
-        }else slots.push(`<div class="rs"><div class="rs-n">${u}</div><div class="rs-c rs-empty">—</div></div>`);
+    _allRacks=await api('GET','/racks');
+    _allRackAssets=await api('GET','/assets');
+    // Populate filters: Datacenter, Zone, Row
+    // Normalise rack data: if zone is null but row_label looks like a zone, swap them
+    _allRacks = _allRacks.map(r=>{
+      if(!r.zone && r.row_label && /zone/i.test(r.row_label)){
+        return {...r, zone:r.row_label, row_label:null};
       }
-      return `<div class="rack-box"><div class="rack-hdr"><span class="rack-id_">${rid}</span><span class="rack-info">${rA.length}/${totalU}U · ${meta.datacenter||'—'}</span></div><div class="rack-body_">${slots.join('')}</div></div>`;
-    }).join('');
+      return r;
+    });
+    const dcs  =[...new Set(_allRacks.map(r=>r.datacenter).filter(Boolean))].sort();
+    const zones=[...new Set(_allRacks.map(r=>r.zone).filter(Boolean))].sort();
+    const rows =[...new Set(_allRacks.map(r=>r.row_label).filter(Boolean))].sort();
+    console.log('Rack filters — DCs:',dcs,'Zones:',zones,'Rows:',rows);
+    const dcSel=$('rk-zone'), zoneSel=$('rk-zone2'), rowSel=$('rk-row');
+    const curDC=dcSel?.value||'', curZone=zoneSel?.value||'', curRow=rowSel?.value||'';
+    if(dcSel)   dcSel.innerHTML  ='<option value="">All Datacenters</option>'+dcs.map(d=>`<option${d===curDC?' selected':''}>${d}</option>`).join('');
+    if(zoneSel) zoneSel.innerHTML='<option value="">All Zones</option>'      +zones.map(z=>`<option${z===curZone?' selected':''}>${z}</option>`).join('');
+    if(rowSel)  rowSel.innerHTML ='<option value="">All Rows</option>'       +rows.map(r=>`<option${r===curRow?' selected':''}>${r}</option>`).join('');
+    renderRackGrid();
   }catch(e){ toast('Racks load error: '+e.message,'err'); }
 }
-function openRackM(){sv('fr-id','');sv('fr-dc','');sv('fr-row','');sv('fr-u',42);sv('fr-notes','');om('mRack');}
-async function saveRack(){
-  const id=fv('fr-id');if(!id){toast('Rack ID required','err');return;}
+
+function renderRackGrid(){
+  const grid=$('rack-grid'), em=$('rack-empty');
+  const filterDC=$('rk-zone')?.value||'';
+  const filterZone=$('rk-zone2')?.value||'';
+  const filterRow=$('rk-row')?.value||'';
+  const allIds=[...new Set([..._allRacks.map(r=>r.rack_id),..._allRackAssets.map(a=>a.rack_id).filter(Boolean)])];
+  if(!allIds.length){grid.innerHTML='';em.style.display='';return;}em.style.display='none';
+  const mm={};_allRacks.forEach(r=>mm[r.rack_id]=r);
+
+  // Filter racks
+  let filtered=allIds.filter(rid=>{
+    const meta=mm[rid]||{};
+    if(filterDC   && meta.datacenter!==filterDC)   return false;
+    if(filterZone && meta.zone!==filterZone)        return false;
+    if(filterRow  && meta.row_label!==filterRow)    return false;
+    return true;
+  });
+
+  // Group by DC → Zone → Row (3-level hierarchy)
+  const groups={};
+  filtered.forEach(rid=>{
+    const meta=mm[rid]||{};
+    const dc=meta.datacenter||'—';
+    const zone=meta.zone||'';
+    const row=meta.row_label||'';
+    const parts=[dc];
+    if(zone) parts.push(zone);
+    if(row) parts.push(`Row ${row}`);
+    const key=parts.join(' › ');
+    if(!groups[key]) groups[key]={dc,zone,row,racks:[]};
+    groups[key].racks.push(rid);
+  });
+
+  const isSU=CU?.role==='superuser';
+  const canEdit=canWrite();
+  const buildRack=rid=>{
+    const meta=mm[rid]||{}, totalU=meta.total_u||42;
+    const rA=_allRackAssets.filter(a=>a.rack_id===rid);
+    const slots=[];
+    for(let u=totalU;u>=1;u--){
+      const asset=rA.find(a=>{const us=parseInt(a.u_start)||0,uh=parseInt(a.u_height)||1;return u>=us&&u<us+uh;});
+      if(asset){
+        const us=parseInt(asset.u_start)||0,uh=parseInt(asset.u_height)||1;
+        if(u===us+uh-1){
+          const tc={Server:'rs-srv',Switch:'rs-sw',Router:'rs-sw',Firewall:'rs-sw',LIU:'rs-liu','Patch Panel':'rs-liu',PDU:'rs-pdu'}[asset.asset_type]||'rs-oth';
+          slots.push(`<div class="rs" style="height:${uh*18}px"><div class="rs-n">${u}</div><div class="rs-c ${tc}" onclick="showDetail('${asset.id}')" title="${asset.hostname}">${asset.hostname}</div></div>`);
+        }
+      }else slots.push(`<div class="rs"><div class="rs-n">${u}</div><div class="rs-c rs-empty">—</div></div>`);
+    }
+    // Build meta line: DC | Zone | Row
+    const metaParts=[];
+    if(meta.datacenter) metaParts.push(meta.datacenter);
+    if(meta.zone) metaParts.push(meta.zone);
+    if(meta.row_label) metaParts.push(`Row ${meta.row_label}`);
+    const metaLine=metaParts.join(' · ')||'';
+    const editBtn=canEdit&&mm[rid]?`<button class="rack-del" onclick='openRackM(${JSON.stringify(meta)})' title="Edit rack" style="color:var(--dim)">✎</button>`:'';
+    const delBtn=isSU&&mm[rid]?`<button class="rack-del" onclick="deleteRack('${rid}')" title="Delete rack">✕</button>`:'';
+    return `<div class="rack-box">
+      <div class="rack-hdr">
+        <div><span class="rack-id_">${rid}</span>${metaLine?`<div style="font-size:8px;color:var(--dim);margin-top:1px">${metaLine}</div>`:''}</div>
+        <div style="display:flex;align-items:center;gap:4px"><span class="rack-info">${rA.length}/${totalU}U</span>${editBtn}${delBtn}</div>
+      </div>
+      <div class="rack-body_">${slots.join('')}</div>
+    </div>`;
+  };
+
+  if(Object.keys(groups).length<=1 && !filterDC && !filterZone && !filterRow){
+    // No grouping needed — flat view
+    grid.innerHTML=`<div class="rack-grid">${filtered.map(buildRack).join('')}</div>`;
+  } else {
+    grid.innerHTML=Object.entries(groups).map(([key,g])=>`
+      <div class="zone-group">
+        <div class="zone-hdr">⬡ ${key} <span>${g.racks.length} rack${g.racks.length!==1?'s':''}</span></div>
+        <div class="rack-grid">${g.racks.map(buildRack).join('')}</div>
+      </div>`).join('');
+  }
+}
+
+async function deleteRack(rid){
+  if(!confirm(`Delete rack "${rid}"?\nThis will fail if the rack has assets assigned.`)) return;
   try{
-    await api('POST','/racks',{rack_id:id,dc:fv('fr-dc'),row_label:fv('fr-row'),total_u:parseInt($('fr-u').value)||42,notes:fv('fr-notes')});
-    cm('mRack');toast('Rack saved','ok');renderRacks();
+    await api('DELETE',`/racks/${rid}`);
+    toast('Rack deleted','ok');
+    await renderRacks();
+  }catch(e){ toast(e.message,'err'); }
+}
+function openRackM(rack){
+  // rack = existing rack object for edit, null for create
+  const editing=!!rack;
+  $('mRack-title').textContent=editing?'Edit Rack':'New Rack';
+  $('fr-save-btn').textContent=editing?'Save Changes':'Create Rack';
+  sv('fr-id', rack?.rack_id||'');
+  $('fr-id').readOnly=editing; // can't change rack_id after creation
+  $('fr-id').style.opacity=editing?'0.5':'1';
+  sv('fr-dc',   rack?.datacenter||'');
+  sv('fr-zone', rack?.zone||'');
+  sv('fr-row',  rack?.row_label||'');
+  sv('fr-u',    rack?.total_u||42);
+  sv('fr-notes',rack?.notes||'');
+  // Store editing flag
+  $('fr-id').dataset.editing=editing?'1':'';
+  om('mRack');
+}
+async function saveRack(){
+  const id=fv('fr-id'); if(!id){toast('Rack ID required','err');return;}
+  const editing=$('fr-id').dataset.editing==='1';
+  const payload={rack_id:id, dc:fv('fr-dc'), zone:fv('fr-zone'),
+    row_label:fv('fr-row'), total_u:parseInt($('fr-u').value)||42, notes:fv('fr-notes')};
+  try{
+    if(editing){
+      await api('PUT',`/racks/${id}`,payload);
+      toast('Rack updated','ok');
+    } else {
+      await api('POST','/racks',payload);
+      toast('Rack created','ok');
+    }
+    cm('mRack'); renderRacks();
   }catch(e){ toast('Save error: '+e.message,'err'); }
 }
 
@@ -1171,20 +1668,55 @@ async function renderFields(){
       <span style="font-size:10px;color:var(--hi);flex:1">${f.label}</span>
       <span class="fi-type">${f.field_type}</span>
       ${f.required?`<span class="fi-req">required</span>`:''}
-      ${f.is_system?`<span class="tag">system</span>`:
-        `<button class="btn bd_ bxs" onclick="delField('${f.id}')">Remove</button>`}
+      ${f.is_system?`<span class="tag">system</span><button class="btn bs bxs" style="margin-left:4px" onclick='openAddField(${JSON.stringify(f)})'>Edit Opts</button>`:`<button class="btn bs bxs" onclick='openAddField(${JSON.stringify(f)})'>Edit</button><button class="btn bd_ bxs" onclick="delField('${f.id}')">Remove</button>`}
     </div>`).join('');
   // Preview
   const pairs=[];for(let i=0;i<HW_FIELDS.length;i+=2)pairs.push(HW_FIELDS.slice(i,i+2));
   $('field-preview').innerHTML=pairs.map(pair=>`<div class="f2" style="gap:8px;margin-bottom:8px">${pair.map(f=>`<div><div style="font-size:8.5px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">${f.label}</div><div style="background:var(--bg);border:1px solid var(--bd);border-radius:3px;padding:6px 9px;font-size:11px;color:var(--dim)">${f.placeholder||'…'}</div></div>`).join('')}</div>`).join('');
 }
-function openAddField(){sv('ff-id','');sv('ff-label','');sv('ff-key','');sv('ff-type','text');sv('ff-req','0');sv('ff-opts','');sv('ff-ph','');$('ff-opts-wrap').style.display='none';$('ff-type').onchange=function(){$('ff-opts-wrap').style.display=this.value==='select'?'':'none';};om('mField');}
-async function saveField(){
-  const label=fv('ff-label'),key=(fv('ff-key')||'').replace(/[^a-z0-9_]/g,'_').toLowerCase();
-  if(!label||!key){toast('Label and key required','err');return;}
+function openAddField(f){
   try{
-    await api('POST','/hw-fields',{key,label,field_type:fv('ff-type')||'text',placeholder:fv('ff-ph'),options:fv('ff-opts'),required:$('ff-req').value==='1',sort_order:100});
-    cm('mField');toast('Field added','ok');await loadHWFields();renderFields();renderHWFields();
+    sv('ff-id',f?.id||'');
+    sv('ff-label',f?.label||'');
+    sv('ff-key',f?.field_key||'');
+    const typeEl=$('ff-type');
+    if(typeEl) typeEl.value=f?.field_type||'text';
+    const reqEl=$('ff-req');
+    if(reqEl) reqEl.value=f?.required?'1':'0';
+    sv('ff-opts',f?.options||'');
+    sv('ff-ph',f?.placeholder||'');
+    const titleEl=$('mFt');
+    if(titleEl) titleEl.textContent=f?'Edit Field':'Add Field';
+    const saveBtnEl=$('mField')?.querySelector('.btn.bp');
+    if(saveBtnEl) saveBtnEl.textContent=f?'Save Changes':'Add Field';
+    const kwrap=$('ff-key-wrap');
+    if(kwrap) kwrap.style.display=f?'none':'block';
+    const isSelect=(f?.field_type==='select')||(!f);
+    const owrap=$('ff-opts-wrap');
+    if(owrap) owrap.style.display=isSelect?'block':'none';
+    if(typeEl) typeEl.onchange=function(){
+      const ow=$('ff-opts-wrap');
+      if(ow) ow.style.display=this.value==='select'?'block':'none';
+    };
+    om('mField');
+  }catch(e){ console.error('openAddField error:',e); toast('Error opening field editor: '+e.message,'err'); }
+}
+async function saveField(){
+  const id=fv('ff-id');
+  const label=fv('ff-label');
+  if(!label){toast('Label required','err');return;}
+  try{
+    if(id){
+      // Edit existing field options/label only
+      await api('PUT',`/hw-fields/${id}`,{label,options:fv('ff-opts'),placeholder:fv('ff-ph'),required:$('ff-req').value==='1'});
+      toast('Field updated','ok');
+    } else {
+      const key=(fv('ff-key')||'').replace(/[^a-z0-9_]/g,'_').toLowerCase();
+      if(!key){toast('Field key required','err');return;}
+      await api('POST','/hw-fields',{key,label,field_type:fv('ff-type')||'text',placeholder:fv('ff-ph'),options:fv('ff-opts'),required:$('ff-req').value==='1',sort_order:100});
+      toast('Field added','ok');
+    }
+    cm('mField');await loadHWFields();renderFields();renderHWFields();
   }catch(e){ toast(e.message,'err'); }
 }
 async function delField(id){
@@ -1225,22 +1757,52 @@ function renderPerms(){
 // ─────────────────────────────────────────────
 // EXPORT / IMPORT
 // ─────────────────────────────────────────────
-function doExport(){
-  window.location.href=`${API}/export/excel?t=${TOKEN}`;
-  // Fallback: fetch with auth
-  fetch(`${API}/export/excel`,{headers:{Authorization:`Bearer ${TOKEN}`}})
-    .then(r=>{if(!r.ok)throw new Error('Export failed');return r.blob();})
-    .then(blob=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dc-manager-${new Date().toISOString().slice(0,10)}.xlsx`;a.click();})
-    .catch(e=>toast('Export error: '+e.message,'err'));
+async function doExport(){
+  if(!TOKEN){toast('Not logged in','err');return;}
+  const btn=document.querySelector('[onclick="doExport()"]');
+  if(btn){btn.disabled=true;btn.textContent='Exporting…';}
+  try{
+    const r=await fetch(`${API}/export/excel`,{headers:{Authorization:`Bearer ${TOKEN}`}});
+    if(!r.ok){
+      const err=await r.json().catch(()=>({detail:'Export failed'}));
+      throw new Error(err.detail||'Export failed');
+    }
+    const blob=await r.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`dc-manager-${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast('Export downloaded!','ok');
+  }catch(e){
+    toast('Export error: '+e.message,'err');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='↓ Export All to Excel';}
+  }
 }
 
 function downloadTemplate(){
-  // Build a template Excel in-browser using SheetJS (bundled already via CDN)
   const wb=XLSX.utils.book_new();
-  const aHdr=['hostname','asset_type','status','server_type','datacenter','rack_id','u_start','u_height','mgmt_ip','oob_ip','mac_addr','vlan','asset_tag','serial_number',...HW_FIELDS.map(f=>f.field_key),'notes'];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aHdr,['web-prod-01','Server','Online','Rack Server','DC1-Mumbai','R-01',10,2,'192.168.10.11','10.0.1.11','','10','TAG-001','SN123456',...HW_FIELDS.map(f=>f.placeholder||''),'Primary web server']]),'Assets_Template');
-  const sHdr=['category','brand','model','spec','form_factor','interface','total_qty','available_qty','location','unit_cost','notes'];
+  // ── Assets Template ──────────────────────────────────────────────────
+  // Fixed columns + custom HW fields
+  // Assets_Template — rack zone/row columns included directly
+  const aFixed=['hostname','asset_type','status',
+    'datacenter','rack_zone','rack_row','rack_id','u_start','u_height',
+    'prov_ip','bmc_ip','data_ip','bkup_ip','mac_addr','vlan',
+    'asset_tag','serial_number','po_number','eol_date','app_owner'];
+  const aHWKeys=HW_FIELDS.map(f=>f.field_key);
+  const aHdr=[...aFixed,...aHWKeys,'notes'];
+  const aExample=['web-prod-01','Server','Online','HYN-POD-2','Zone-1','Row-1','R-01',10,2,
+    '192.168.10.11','10.0.1.10','10.10.0.11','10.20.0.11','aa:bb:cc:dd:ee:ff','10',
+    'TAG-001','SN123456','PO-2024-001','2028-12-31','John Smith / IT Ops',
+    ...HW_FIELDS.map(f=>f.placeholder||''),'Primary web server'];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aHdr,aExample]),'Assets_Template');
+  // ── Stock Template ───────────────────────────────────────────────────
+  const sHdr=['category','brand','model','spec','form_factor','interface','total_qty','avail_qty','storage_loc','unit_cost','notes'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([sHdr,['SSD','Samsung','870 EVO','2TB','2.5"','SATA III',20,20,'Shelf A-3',8500,'']]),'Stock_Template');
+  // ── Connectivity Template ────────────────────────────────────────────
   const cHdr=['src_hostname','src_slot','src_port','src_port_label','liu_a_rack','liu_a_hostname','liu_a_port','liu_b_rack','liu_b_hostname','liu_b_port','dst_hostname','dst_port','cable_type','speed','vlan','purpose','notes'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([cHdr,['web-prod-01','slot1','port1','slot1port1','R-02','LIU-02','port5','R-10','LIU-10','port5','core-sw-01','Gi1/0/10','Fiber SM','10G','100','Data','']]),'Connectivity_Template');
   XLSX.writeFile(wb,'dc-manager-import-templates.xlsx');
@@ -1277,6 +1839,7 @@ async function doImport(){
       $('lp').style.display='none';
       $('app').style.display='flex';
       initApp();
+      startIdleWatch();
     }catch(e){ doLogout(); }
   }
 })();

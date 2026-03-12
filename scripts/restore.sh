@@ -1,47 +1,43 @@
 #!/bin/bash
 # DC Manager Pro — Restore from Backup
-# Usage: ./restore.sh <backup_file.sql.gz>
+# Usage: ./scripts/restore.sh <backup_file.sql.gz>
 
 set -e
+cd "$(dirname "$0")/.."
 BACKUP_FILE="$1"
-DB_USER="${DB_USER:-dcuser}"
-DB_PASS="${DB_PASS:-dcpassword123}"
-DB_NAME="${DB_NAME:-dcmanager}"
-DB_HOST="${DB_HOST:-localhost}"
-DB_PORT="${DB_PORT:-5432}"
 
 if [ -z "$BACKUP_FILE" ]; then
     echo "Usage: $0 <path-to-backup.sql.gz>"
     echo ""
     echo "Available backups:"
-    ls -lh backups/daily/ backups/weekly/ 2>/dev/null
+    ls -lht volumes/backups/daily/   2>/dev/null | head -6
+    ls -lht volumes/backups/weekly/  2>/dev/null | head -4
+    ls -lht volumes/backups/manual/  2>/dev/null | head -4
     exit 1
 fi
 
-if [ ! -f "$BACKUP_FILE" ]; then
-    echo "ERROR: Backup file not found: $BACKUP_FILE"
-    exit 1
-fi
+[ ! -f "$BACKUP_FILE" ] && echo "ERROR: File not found: $BACKUP_FILE" && exit 1
+
+source .env 2>/dev/null || true
+DB_USER="${DB_USER:-dcuser}"
+DB_PASS="${DB_PASS:-changeme123}"
+DB_NAME="${DB_NAME:-dcmanager}"
 
 echo "==================================================="
 echo "  DC Manager Pro — Database Restore"
 echo "==================================================="
-echo "  File:     $BACKUP_FILE"
-echo "  Database: $DB_NAME @ $DB_HOST:$DB_PORT"
+echo "  File:     $BACKUP_FILE ($(du -sh "$BACKUP_FILE" | cut -f1))"
+echo "  Database: $DB_NAME"
 echo "==================================================="
 echo ""
 read -p "WARNING: This will OVERWRITE all current data. Continue? [y/N] " confirm
 [ "$confirm" != "y" ] && [ "$confirm" != "Y" ] && echo "Aborted." && exit 0
 
+echo "Restoring..."
 export PGPASSWORD="$DB_PASS"
+gunzip -c "$BACKUP_FILE" | docker exec -i dcm_postgres \
+  psql -U "$DB_USER" -d "$DB_NAME"
 
-echo "[$(date)] Dropping and recreating database..."
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;"
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-
-echo "[$(date)] Restoring from $BACKUP_FILE ..."
-gunzip -c "$BACKUP_FILE" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"
-
-echo "[$(date)] ✓ Restore complete!"
 echo ""
-echo "Restart the app to reconnect: docker compose restart backend"
+echo "✓ Restore complete! Restart backend to reconnect:"
+echo "  docker compose restart backend"
