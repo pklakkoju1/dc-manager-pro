@@ -1,8 +1,21 @@
-# DC Manager Pro — v2.7.0
+# ⬡ DC Manager Pro — v2.7.0
 
-**Production Datacenter Asset Management Platform**  
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-1.0.0-00c8ff?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-1.25-009639?style=flat-square&logo=nginx&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+
+**Production-ready Datacenter Asset Management platform.**  
+Track servers, racks, cabling, and spare parts — with role-based access control, persistent PostgreSQL storage, and automated backups.
 Developed by **pklakkoju**
+[Quick Start](#-quick-start) · [Features](#-features) · [Roles](#-role-based-access-control) · [Backup & Restore](#-backup--restore) · [API](#-api-reference) · [Bare-metal](#-bare-metal--vm-deployment)
 
+</div>
 ---
 
 ## License
