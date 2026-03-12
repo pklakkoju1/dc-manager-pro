@@ -335,6 +335,23 @@ async def list_assets(q:Optional[str]=None, type:Optional[str]=None,
     rows = await conn.fetch(sql, *params)
     return [_out(r) for r in rows]
 
+
+@app.get("/api/assets/check-slot")
+async def check_slot(rack:str, ustart:int, uheight:int=1, exclude_id:Optional[str]=None,
+                     conn=Depends(db), _=Depends(get_current_user)):
+    """Return any assets occupying the given rack+U range, optionally excluding one asset id."""
+    u_end = ustart + uheight - 1
+    q = """SELECT id,hostname,asset_type,u_start,u_height FROM assets
+           WHERE rack_id=$1
+             AND u_start IS NOT NULL
+             AND (u_start <= $3 AND u_start + u_height - 1 >= $2)"""
+    params = [rack, ustart, u_end]
+    if exclude_id:
+        q += " AND id != $4"
+        params.append(exclude_id)
+    rows = await conn.fetch(q, *params)
+    return [_out(r) for r in rows]
+
 @app.get("/api/assets/{aid}")
 async def get_asset(aid:str, conn=Depends(db), _=Depends(get_current_user)):
     row = await conn.fetchrow("SELECT * FROM assets WHERE id=$1", aid)
@@ -788,13 +805,28 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
                         rack_id, dc, r_zone, r_row)
                 ex=await conn.fetchval("SELECT id FROM assets WHERE hostname=$1",host)
                 if not ex:
+                    # Check for slot conflict before inserting
+                    u_st = n(col(row,"u_start"))
+                    u_ht = n(col(row,"u_height")) or 1
+                    if rack_id and u_st:
+                        u_end = u_st + u_ht - 1
+                        conflict = await conn.fetchrow("""
+                            SELECT hostname,u_start,u_height FROM assets
+                            WHERE rack_id=$1
+                              AND u_start IS NOT NULL
+                              AND (u_start <= $3 AND u_start + u_height - 1 >= $2)""",
+                            rack_id, u_st, u_end)
+                        if conflict:
+                            log.warning(f"Import skip {host}: slot conflict in {rack_id} U{u_st}-{u_end} with {conflict['hostname']}")
+                            errors+=1
+                            continue
                     await conn.execute("""INSERT INTO assets
                         (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,
                          mgmt_ip,oob_ip,mac_addr,vlan,asset_tag,serial_number,notes,hw_data)
                         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)""",
                         host,s(col(row,"asset_type"))or"Server",s(col(row,"status"))or"Online",
                         s(col(row,"server_type")),dc,rack_id,
-                        n(col(row,"u_start")),n(col(row,"u_height"))or 1,
+                        u_st,u_ht,
                         prov_ip, bmc_ip, s(col(row,"mac_addr")),
                         s(col(row,"vlan")),s(col(row,"asset_tag")),s(col(row,"serial_number")),
                         s(col(row,"notes")),json.dumps(hw))

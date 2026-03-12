@@ -1237,16 +1237,32 @@ async function saveAsset(){
   const host=fv('fa-host'); if(!host){toast('Hostname required','err');return;}
   const id=$('fa-id').value;
   const hwVals=getHWValues();
+  const rack=fv('fa-rack');
+  const ustart=$('fa-us').value?parseInt($('fa-us').value):null;
+  const uheight=parseInt($('fa-uh').value)||1;
   const body={
     host, type:fv('fa-type')||'Server', status:fv('fa-status')||'Online',
     server_type:hwVals.server_type||null,
-    dc:fv('fa-dc'), rack:fv('fa-rack'),
-    ustart:$('fa-us').value?parseInt($('fa-us').value):null,
-    uheight:parseInt($('fa-uh').value)||1,
+    dc:fv('fa-dc'), rack,
+    ustart, uheight,
     atag:fv('fa-atag'), sn:fv('fa-sn'), notes:fv('fa-notes'),
     ip:fv('fa-ip'), oob:fv('fa-oob'), mac:fv('fa-mac'), vlan:fv('fa-vlan'), ipn:fv('fa-ipn'),
     hw_data: {...hwVals, po_number:fv('fa-po')||null, eol_date:fv('fa-eol')||null, app_owner:fv('fa-owner')||null, data_ip:fv('fa-dataip')||null, bkup_ip:fv('fa-bkupip')||null}
   };
+  // ── Check slot conflict before saving ────────────────────────────
+  if(rack && ustart){
+    try{
+      const params=new URLSearchParams({rack,ustart,uheight});
+      if(id) params.set('exclude_id',id);
+      const conflicts=await api('GET',`/assets/check-slot?${params}`);
+      if(conflicts.length){
+        const names=conflicts.map(c=>`${c.hostname} (U${c.u_start}–${c.u_start+c.u_height-1})`).join(', ');
+        const u_end=ustart+uheight-1;
+        const msg=`⚠ Rack ${rack} U${ustart}${uheight>1?'–'+u_end:''} is already occupied by:\n\n${names}\n\nDo you want to proceed anyway?`;
+        if(!confirm(msg)) return;
+      }
+    }catch(e){ /* non-blocking — proceed if check fails */ }
+  }
   try{
     if(id) await api('PUT',`/assets/${id}`,body);
     else    await api('POST','/assets',body);
@@ -1258,7 +1274,7 @@ async function saveAsset(){
         await api('POST','/connectivity',{src_host:host,src_slot:g('cx-ss'),src_port:g('cx-sp'),src_label:g('cx-sl'),liu_a_rack:g('cx-ar'),liu_a_host:g('cx-ah'),liu_a_port:g('cx-ap'),liu_b_rack:g('cx-br'),liu_b_host:g('cx-bh'),liu_b_port:g('cx-bp'),dst_host:g('cx-dh'),dst_port:g('cx-dp'),cable:'Fiber SM',speed:row.querySelector('.cx-spd')?.value,purpose:row.querySelector('.cx-purp')?.value});
       }
     }
-    cm('mAsset'); toast('Asset saved','ok'); renderAssets(); renderDash();
+    cm('mAsset'); toast('Asset saved','ok'); renderAssets(); renderDash(); if($('view-racks').classList.contains('on')) renderRacks(); else _allRackAssets=[];
   }catch(e){ toast('Save failed: '+e.message,'err'); }
 }
 

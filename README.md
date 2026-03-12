@@ -1,4 +1,4 @@
-# DC Manager Pro — v2.4.0
+# DC Manager Pro — v2.7.0
 
 **Production Datacenter Asset Management Platform**  
 Developed by **pklakkoju**
@@ -100,6 +100,7 @@ dc-prod/
 - **Network fields:** Provisioning IP (Prov IP), BMC IP (iDRAC/iLO/IPMI), Data IP, Backup IP, MAC, VLAN, Additional IPs
 - **Hardware fields:** Fully configurable via Field Manager (Superuser only)
 - **Asset History:** Full audit trail per asset — tracks creation, status changes, rack moves, hardware changes
+- **Slot conflict protection:** Warns before saving if rack+U position is already occupied; hard-fails on import to prevent duplicate placement
 - Inline connectivity entry from asset form
 - Export/Import via Excel
 
@@ -109,6 +110,8 @@ dc-prod/
 - Items per page: 50 / 100 / All
 - Pagination with page navigation
 - Filter by Type and Status
+- Multi-select checkboxes per row + select-all in header
+- Bulk delete selected assets (admin/superuser only) with confirmation
 
 ### Asset Types
 Server, VM, Switch, Router, Firewall, LIU, Patch Panel, PDU, KVM, Other
@@ -290,6 +293,7 @@ Interactive docs: `http://your-server:3000/api/docs`
 | `/api/assets` | GET/POST | Any/Write | List/create assets |
 | `/api/assets/{id}` | GET/PUT/DELETE | Any/Write | Asset CRUD |
 | `/api/assets/{id}/history` | GET | Any | Asset audit history |
+| `/api/assets/check-slot` | GET | Any | Check rack+U slot occupancy |
 | `/api/racks` | GET/POST | Any/Write | List/create racks |
 | `/api/racks/{id}` | PUT | Write | Edit rack |
 | `/api/racks/{id}` | DELETE | Superuser | Delete rack (must be empty) |
@@ -321,6 +325,26 @@ ALLOWED_ORIGINS=*       # CORS origins
 ---
 
 ## Changelog
+
+### v2.7.0 (2026-03-12)
+- Added: Slot conflict check on manual asset add/edit — warns with confirmation dialog showing conflicting hostname and U position before saving
+- Added: Slot conflict check on import — rows that conflict with an existing asset are skipped and counted as errors (hard fail, no overwrite)
+- Added: `/api/assets/check-slot` endpoint — checks rack+U range occupancy, supports multi-U devices and excludes self on edit
+- Fixed: Rack view filter — Zone dropdown now correctly populated from `zone` field; Rows from `row_label`
+- Fixed: Rack view filter — rk-zone2 (Zones) dropdown now declared in HTML directly, no longer dynamically injected (was causing empty Zones dropdown on load)
+- Fixed: Rack data normalisation — if `zone` is null but `row_label` contains "zone", value is automatically treated as zone in the UI
+- Fixed: Import now accepts both `rack_zone`/`rack_row` and legacy `zone`/`row_label` column names in Assets sheet
+
+### v2.6.0 (2026-03-12)
+- Added: Asset multi-select with checkbox column in assets table
+- Added: Select-all checkbox in assets table header
+- Added: Bulk delete button in toolbar — appears when assets are selected, shows count, requires confirmation
+- Added: Bulk delete clears selection and refreshes table and dashboard on completion
+
+### v2.5.0 (2026-03-12)
+- Fixed: Export rack_zone/rack_row column mapping — zone value was appearing in rack_row column instead of rack_zone
+- Fixed: Export now uses explicit named variables for rack_zone and rack_row to prevent column shift
+- Fixed: Import accepts both `rack_zone`/`zone` and `rack_row`/`row_label` column names for backwards compatibility
 
 ### v2.4.0 (2026-03-11)
 - Fixed: Rack View crash "filterZ is not defined" on load
