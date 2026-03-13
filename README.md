@@ -1,4 +1,4 @@
-# ⬡ DC Manager Pro — v2.7.0
+# ⬡ DC Manager Pro — v3.0.0
 
 <div align="center">
 
@@ -955,6 +955,41 @@ ALLOWED_ORIGINS=*       # CORS — use * for internal tools
 ---
 
 ## Changelog
+
+### v3.0.0 (2026-03-13)
+- Added: Connectivity table — resizable columns (drag column edge)
+- Added: Connectivity table — select-all checkbox + per-row checkboxes
+- Added: Connectivity table — bulk delete selected connections with confirmation
+- Added: Connectivity table — sort by Server, Port Label, Switch, Cable, Speed, VLAN, Purpose (click column header)
+- Added: Connectivity table — filter by Cable Type and Speed dropdowns
+- Added: Connectivity table — LIU-B column toggle (column chooser parity with Assets table)
+- Redesigned: Rack View — modern card layout with rounded corners, gradient headers, hover effects
+- Redesigned: Rack View — DC/Zone/Row shown as colour-coded chips on each rack card (cyan/green/purple)
+- Redesigned: Rack View — utilisation bar under each rack header (green → cyan gradient)
+- Redesigned: Rack View — improved slot rows: taller rows, hover brightness, cleaner U number column
+- Redesigned: Rack View — DC group headers with left accent bar; Zone subheaders with colour-coded border
+- Redesigned: Rack View — rack legend bar (Server / Switch / LIU / PDU / Other)
+- Redesigned: Rack View — full dark and light mode support for all new elements
+- Added: Asset detail modal — Topology tab with draggable network diagram
+- Added: Topology diagram — focal device center (★), connected nodes in arc, draggable with mouse and touch
+- Added: Topology diagram — SVG edges with port labels, arrowhead markers
+- Added: Topology diagram — colour-coded nodes: Server=cyan, LIU=orange, Switch=green, Other=purple
+- Updated: Version bumped to v3.0.0
+- Changed: Rack View — removed TYPE legend bar and SERVER GROUPS legend bar (cleaner view, colours self-evident on slots)
+- Changed: Rack View — rack card width increased to 240px so hostname + serial number both display clearly on every slot
+- Changed: Rack View — all slots (including 1U) now show hostname on line 1 and serial number on line 2
+- Changed: Rack View — 1U slot height increased to 18px to accommodate two text lines
+- Added: Dashboard KPI cards are now clickable — Total Assets/Servers → Assets page, Racks → Rack View, Connections → Connectivity, Stock SKUs/Low Stock → Stock / Parts
+- Added: Rack View toolbar — search box + all filters (DC, Zone, Row, New Rack, Export) now in a single horizontal row matching the Assets page style
+- Added: Rack View — search box to filter racks by ID, datacenter or zone name
+- Added: Rack View — U-position numbers displayed on **both left and right** sides of every slot
+- Added: Rack View — hostname-prefix colour grouping (same prefix = same colour, 12-colour palette)
+- Added: Rack View — live server-group legend bar showing prefix → colour mapping
+- Added: Rack View — utilisation bar colour-codes: green <60%, amber 60–85%, red >85%
+- Changed: Light mode — cool slate-blue tinted palette (not blinding white), clearly readable
+- Changed: All toolbars (Assets, Connectivity, Stock) — filters displayed side-by-side in a single horizontal row
+- Changed: Font updated to Inter for improved readability across all pages
+- Changed: Full design-token system (--radius, --shadow CSS variables)
 
 ### v2.8.0 (2026-03-13)
 - Added: HTTPS/SSL support — app now served on port 443, HTTP redirects to HTTPS automatically
