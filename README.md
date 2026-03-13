@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-00c8ff?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.0.0-00c8ff?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
@@ -18,6 +18,212 @@ Developed by **pklakkoju**
 </div>
 
 ---
+
+---
+
+## What is DC Manager Pro?
+
+DC Manager Pro is a self-hosted web application for managing physical datacenter infrastructure. It gives you a single place to track every server, switch, LIU, PDU and other asset in your datacenter — where it lives in the rack, what IP it has, what cables connect it, and what spare parts you have on the shelf. Everything runs on your own server with no external dependencies or cloud services.
+
+Think of it as a lightweight DCIM (Datacenter Infrastructure Management) tool built for small-to-medium datacenters that need something practical and fast to deploy.
+
+---
+
+## Features & How to Use Them
+
+### 🔐 Login & User Roles
+
+When you open the app you land on the sign-in page. Enter your username and password.
+
+There are three roles:
+
+| Role | What they can do |
+|------|-----------------|
+| **Superuser** | Full access — manage users, roles, all data, delete anything |
+| **Admin** | Add, edit and delete assets, racks, stock and connectivity |
+| **Viewer** | Read-only — can view everything but cannot make changes |
+
+The first account created is `admin / Admin@123` — **change this immediately** after first login. Superusers can create and manage users from the **Admin → Users** menu.
+
+The session auto-expires after inactivity. A warning banner appears 60 seconds before logout — click **Stay Logged In** to extend.
+
+---
+
+### ◈ Dashboard
+
+The dashboard is the home screen. It shows you the health of your datacenter at a glance.
+
+**KPI Cards** (top row) — click any card to jump straight to that section:
+- **Total Assets** → goes to All Assets page
+- **Servers** → goes to All Assets filtered view
+- **Racks** → goes to Rack View
+- **Connections** → goes to Connectivity page
+- **Stock SKUs** → goes to Stock / Parts page
+- **Low Stock** → goes to Stock / Parts (items with ≤5 units remaining)
+
+**Assets by Type** — horizontal bar chart showing how many of each asset type (Server, Switch, LIU, etc.) you have.
+
+**Stock Summary** — breakdown of parts inventory by category with bar indicators.
+
+**Recent Assets** — the last 8 assets added or modified, with hostname, type, rack location and management IP.
+
+---
+
+### ◻ All Assets
+
+The main inventory table. Every physical and virtual asset in your datacenter.
+
+**Searching & Filtering:**
+- Type in the search box to filter by hostname, IP address, serial number or rack ID — results update as you type
+- Use the **All Types** dropdown to filter by asset type (Server, VM, Switch, Router, Firewall, LIU, Patch Panel, PDU, KVM, Other)
+- Use the **All Status** dropdown to filter by status (Online, Offline, Maintenance, Decommissioned, Spare)
+- Use the **50/pg** dropdown to control how many rows appear per page
+
+**Columns:**
+- Click **⊞ Cols** to show/hide columns — toggle Data IP, Backup IP, App Owner and more
+- Drag the edge of any column header to resize it
+- Click any column header to sort ascending/descending
+
+**Adding an Asset:**
+Click **+ Add Asset** (top right). Fill in:
+- Hostname, asset type, status
+- Datacenter, rack ID and U position (checks for slot conflicts automatically)
+- Management IP (Prov IP), BMC/OOB IP, MAC address, VLAN
+- Hardware tab: Make, Model, Serial Number, Asset Tag, PO Number, EOL Date, App Owner, Data IP, Backup IP
+- Any custom hardware fields defined in Field Manager
+
+**Editing / Deleting:**
+Each row has **Edit** and **Del** buttons. Deleting is permanent — there is no recycle bin. Bulk-select rows using the checkboxes then click **🗑 Delete** to remove multiple assets at once.
+
+**Clicking a hostname** opens the Asset Detail panel with three tabs:
+- **Info** — all asset fields in a clean read panel, with clickable links for BMC IP, Prov IP, Data IP and Backup IP (opens `https://ip` in a new tab)
+- **History** — full audit trail of every change made to the asset (who, what, when)
+- **Topology** — draggable network diagram showing how this asset connects to switches and LIUs
+
+---
+
+### ▤ Rack View
+
+A visual representation of your physical racks. Each rack is drawn as a card showing every U position from top (42U) to bottom (1U).
+
+**Reading a rack card:**
+- The rack ID is shown in the header in cyan
+- Below it: the Datacenter name, and Zone + Row side by side as colour-coded chips
+- The thin bar under the header is the **utilisation bar** — green when <60% full, amber at 60–85%, red above 85%
+- The `xx/42U` in the top right shows used U vs total U
+- U numbers appear on both the left and right edge of every slot
+- Each filled slot shows: **hostname / serial number** on one line
+- Empty slots are shown as blank rows
+
+**Colour coding:**
+- Servers with the same hostname prefix (e.g. `HYNRBBMPRUPICAS01` through `HYNRBBMPRUPICAS10`) automatically share the same colour across all racks — makes it easy to see which group of servers is where
+- Switches/Routers/Firewalls = green
+- LIUs/Patch Panels = orange
+- PDUs = amber
+- Other = purple
+
+**Filtering:** Use the toolbar dropdowns to filter by Datacenter, Zone or Row. The search box filters by rack ID or datacenter name.
+
+**Clicking a slot** opens the full Asset Detail panel for that asset.
+
+**New Rack:** Click **+ New Rack** to define a rack. Enter the Rack ID, Datacenter, Zone, Row and total U height (default 42U).
+
+**Export Rack:** Click **↓ Export Rack** to download an Excel file of the current rack view with two sheets:
+- *Rack Assets* — one row per filled slot (hostname, serial, BMC IP, Mgmt IP, make, model, PO number etc.)
+- *Full U Layout* — every U position including empty slots, useful for physical audits
+
+---
+
+### ◫ Stock / Parts
+
+Tracks spare parts and hardware inventory — drives, RAM, NICs, transceivers, cables, PSUs, fans and anything else you keep on the shelf.
+
+**Each stock item has:**
+- Category, Brand, Model, Spec (e.g. `1.92TB`, `32GB DDR4`)
+- Form factor and interface type
+- Total qty, Available qty, Allocated qty
+- Storage location (e.g. `Shelf A3`)
+- Unit cost
+
+**Adding stock:** Click **+ Add Stock Item**. Fill in the details and set an initial quantity.
+
+**Stock transactions:** Use the **+ / −** buttons on each row to record stock in/out movements. Every transaction is logged.
+
+**Low stock warning:** Items with ≤5 available units are highlighted in the sidebar counter and on the Dashboard. Set a minimum threshold when creating items.
+
+**Searching:** Use the search box or the Category dropdown to find items quickly.
+
+---
+
+### ⇄ Connectivity
+
+Tracks the physical cabling path from a server port all the way through to the switch — including intermediate LIUs (patch panels / fibre termination units).
+
+**A connectivity record captures the full path:**
+```
+Server port  →  LIU-A (rack/hostname/port)  →  LIU-B  →  Switch port
+```
+
+**Each record stores:**
+- Source server hostname, slot, port and port label
+- LIU-A details (rack, hostname, port)
+- LIU-B details (optional — for multi-hop paths)
+- Destination switch hostname and port
+- Cable type (Fiber SM, Fiber MM, DAC, Copper)
+- Speed (1G, 10G, 25G, 40G, 100G, 400G)
+- VLAN and purpose (e.g. Management, Data, Storage)
+
+**Filtering:** Filter by cable type or speed using the toolbar dropdowns. Search by hostname, port label or purpose.
+
+**Sort:** Click any column header to sort. Click again to reverse.
+
+**Bulk delete:** Select rows with checkboxes then click **🗑 Delete** to remove multiple records at once.
+
+**Topology view:** Open any asset's detail panel and click the **Topology** tab to see a draggable visual diagram of all connectivity paths for that asset.
+
+---
+
+### ↓ Export / Import
+
+**Export to Excel:** Downloads a single `.xlsx` file with three sheets — Assets, Stock and Connectivity — containing every field including custom hardware fields.
+
+**Import from Excel:** Upload a filled-in `.xlsx` to bulk-load assets, stock or connectivity records. Use the **Download Templates** button first to get the correct column headers. Row 1 must be the header row. IDs are auto-generated on import — do not fill the ID column.
+
+**Import rules:**
+- Assets: hostname must be unique
+- Existing records are updated if the ID column matches; new rows are inserted
+- Invalid rows are skipped and reported in the result summary
+
+---
+
+### ⚙ Field Manager *(Superuser only)*
+
+Lets you add custom fields to the Asset form's Hardware tab — useful for site-specific data like rack unit power draw, warranty ticket number, firmware version etc.
+
+**Adding a field:** Click **+ Add Field**, enter a name, choose a type (Text, Number, Date, Select) and mark it required or optional. It immediately appears in the Asset form for all users.
+
+**System fields** (Make, Model, Serial, PO Number etc.) are locked and cannot be removed.
+
+---
+
+### 🔒 Permissions *(Superuser only)*
+
+Shows a matrix of what each role (Viewer, Admin, Superuser) can do across each section of the app. This is read-only documentation — roles are fixed by design and cannot be customised.
+
+---
+
+### 👤 Users *(Superuser only)*
+
+Create, edit and delete user accounts. Each user is assigned one of the three roles. Passwords are hashed with bcrypt — never stored in plain text.
+
+---
+
+### ◑ Light / Dark Mode
+
+Click the **◑** button in the top-left of the sidebar to toggle between dark mode (default deep navy) and light mode (cool slate-blue). The preference is saved in the browser.
+
+---
+
 
 ## License
 
