@@ -116,7 +116,7 @@ A visual representation of your physical racks. Each rack is drawn as a card sho
 - Empty slots are shown as blank rows
 
 **Colour coding:**
-- Servers with the same hostname prefix (e.g. `HYNRBBMPRUPICAS01` through `HYNRBBMPRUPICAS10`) automatically share the same colour across all racks — makes it easy to see which group of servers is where
+- Servers with the same hostname prefix (e.g. `HOSTCAS01` through `HOSTCAS10`) automatically share the same colour across all racks — makes it easy to see which group of servers is where
 - Switches/Routers/Firewalls = green
 - LIUs/Patch Panels = orange
 - PDUs = amber
