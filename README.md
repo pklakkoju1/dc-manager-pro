@@ -701,11 +701,11 @@ Visual diagrams of every rack in your datacenters.
 **Reading a rack card:**
 ```
 R-PROD-01                              ✎  ✕
-[HYN-POD-2]  [Zone-8]  [Row-15]
+[HYD-POD]  [Zone-1]  [Row-1]
 ████████████░░░░░░░░░░░░░░  43%
 ───────────────────────────────────────
-42 │  HYNRBBMPRUPIWAF02 / BRR8R24  │ 42
-36 │  HYNRBBMPRUPIK8S01 / SN123456 │ 36
+42 │  appserver01 / SN654321       │ 42
+36 │  dbserver01 / SN123456        │ 36
 32 │  —                            │ 32  (empty)
 ```
 
