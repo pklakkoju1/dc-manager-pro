@@ -1,4 +1,4 @@
-#  ⬡ DC Manager Pro — v3.0.0
+#  ⬡ DC Manager Pro — v3.0.2
 
 **Production Datacenter Asset Management Platform**  
 Developed by **pklakkoju**
