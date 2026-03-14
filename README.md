@@ -3,7 +3,7 @@
 **Production Datacenter Asset Management Platform**  
 Developed by **pklakkoju**
 
-[![version](https://img.shields.io/badge/version-3.0.1-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
+[![version](https://img.shields.io/badge/version-3.0.2-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
 [![python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white&labelColor=0a0a0f)](.)
 [![fastapi](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white&labelColor=0a0a0f)](.)
 [![postgres](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white&labelColor=0a0a0f)](.)
