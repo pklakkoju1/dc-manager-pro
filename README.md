@@ -1,19 +1,15 @@
-<div align="center">
+# ⬡ DC Manager Pro — v3.0.1
 
-# 🖥️ DC Manager Pro
+**Production Datacenter Asset Management Platform**  
+Developed by **pklakkoju**
 
-[![version](https://img.shields.io/badge/version-3.0.1-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
+[![version](https://img.shields.io/badge/version-3.0.3-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
 [![python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white&labelColor=0a0a0f)](.)
 [![fastapi](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white&labelColor=0a0a0f)](.)
 [![postgres](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white&labelColor=0a0a0f)](.)
 [![docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker&logoColor=white&labelColor=0a0a0f)](.)
 [![nginx](https://img.shields.io/badge/Nginx-1.25-009900?style=flat-square&logo=nginx&logoColor=white&labelColor=0a0a0f)](.)
 [![license](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0f)](.)
-
-**Production Datacenter Asset Management Platform**  
-Developed by **pklakkoju**
-
-</div>
 
 ---
 
@@ -72,14 +68,14 @@ THE SOFTWARE.
 | Library | Source | Purpose |
 |---------|--------|---------|
 | SheetJS (xlsx) | cdnjs CDN | Excel import/export in browser |
-| Inter | Google Fonts | UI typography |
+| Inter | Google Fonts | Primary UI font |
 | JetBrains Mono | Google Fonts | Monospace data display |
 | Vanilla JS | Built-in | No framework — pure DOM manipulation |
 
 ### Infrastructure
 | Component | Software | Version | Purpose |
 |-----------|----------|---------|---------|
-| Web server / Proxy | Nginx | 1.25 | Serves frontend, reverse-proxies API, HTTPS |
+| Web server / Proxy | Nginx | 1.25 | Serves frontend, reverse-proxies API, HTTPS/TLS |
 | Database | PostgreSQL | 16 | Primary data store |
 | Container runtime | Docker + Compose | 24+ / v2.x | Production deployment |
 | Backup | postgres:alpine | — | Scheduled pg_dump via cron |
@@ -142,33 +138,80 @@ docker --version && docker compose version
 ```
 
 #### Fresh Install
+
+**Step 1 — Extract and enter directory**
 ```bash
-# 1. Extract release zip
 unzip dc-manager-production.zip
 cd dc-prod
+```
 
-# 2. Configure environment
+**Step 2 — Configure environment**
+```bash
 cp .env.example .env
 nano .env
-# Set: DB_PASS (no @ # % chars), JWT_SECRET (32+ random chars)
-
-# 3. Create volume directories
-mkdir -p volumes/postgres volumes/backups/daily volumes/backups/weekly volumes/backups/manual
-
-# 4. Generate SSL certificate  ← required before first start
-./scripts/generate-certs.sh 192.168.86.130   # ← replace with your server IP
-# Output: certs/server.crt + certs/server.key
-
-# 5. Start all services
-docker compose up -d --build
-
-# 6. Wait for postgres to initialise, then verify
-sleep 30 && docker ps
-curl -k https://localhost/api/health
-
-# Open: https://YOUR-SERVER-IP
-# Login: admin / Admin@123  <- change immediately!
 ```
+
+Set these values before starting:
+
+| Variable | What to set | How to generate |
+|----------|------------|-----------------|
+| `SERVER_IP` | Your server IP | — |
+| `DB_PASS` | Strong password (no `@ # %`) | — |
+| `JWT_SECRET` | 32+ char random string | `python3 -c "import secrets; print(secrets.token_hex(32))"` |
+| `NETDATA_STREAM_API_KEY` | UUID — child nodes use this to authenticate | `uuidgen` |
+
+> `NETDATA_STREAM_API_KEY` is only needed if you plan to add child nodes (other bare metal / VMs) to the monitoring dashboard. You can set it to any value or leave the default if using app-only deployment.
+
+**Step 3 — Create persistent storage directories**
+```bash
+mkdir -p volumes/postgres
+mkdir -p volumes/backups/{daily,weekly,manual}
+mkdir -p volumes/netdata/{lib,cache}
+```
+
+**Step 4 — Generate SSL certificate**
+```bash
+# Replace with your actual server IP
+./scripts/generate-certs.sh 192.168.86.130
+# Creates: certs/server.crt  (certificate)
+#          certs/server.key  (private key)
+```
+
+**Step 5 — Start the stack**
+
+Choose based on your needs:
+
+*Deploy App + Monitoring (Netdata included — recommended):*
+```bash
+docker compose up -d --build
+```
+Starts 5 containers: `dcm_postgres` · `dcm_backend` · `dcm_frontend` · `dcm_backup` · `dcm_netdata`
+
+*Deploy App only (no Netdata monitoring):*
+```bash
+docker compose up -d --build db backend frontend backup
+```
+Starts 4 containers: `dcm_postgres` · `dcm_backend` · `dcm_frontend` · `dcm_backup`
+
+**Step 6 — Verify everything started**
+```bash
+# All containers should show "Up"
+docker ps
+
+# App health check
+curl -k https://localhost/api/health
+# Expected: {"status":"ok"}
+```
+
+**Step 7 — Open in browser**
+
+| URL | What |
+|-----|------|
+| `https://YOUR-SERVER-IP` | DC Manager Pro app |
+| `http://YOUR-SERVER-IP` | Redirects to HTTPS |
+| `http://YOUR-SERVER-IP:19999` | Netdata monitoring *(if deployed)* |
+
+Default login: `admin` / `Admin@123` — **change immediately** via Admin → Users.
 
 #### Update Existing Install (no data loss)
 ```bash
@@ -311,7 +354,7 @@ sudo systemctl status dc-manager
 curl http://127.0.0.1:8000/api/health
 ```
 
-#### Step 5 — Configure Nginx (HTTP)
+#### Step 5 — Configure Nginx
 ```bash
 # Deploy frontend
 sudo mkdir -p /var/www/dc-manager
@@ -341,6 +384,7 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # Compression
     gzip on;
     gzip_types text/html text/css application/javascript application/json;
 }
@@ -349,13 +393,16 @@ EOF
 sudo ln -sf /etc/nginx/sites-available/dc-manager /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo systemctl enable nginx
+
+# Open firewall port
 sudo ufw allow 80/tcp
+
+# Open browser: http://YOUR-SERVER-IP
 ```
 
-#### Step 5b — Configure Nginx (HTTPS with self-signed cert)
+#### Step 5b — Configure Nginx with HTTPS (self-signed)
 ```bash
 # Generate self-signed cert
-sudo apt install -y openssl
 sudo mkdir -p /etc/nginx/certs
 sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
   -keyout /etc/nginx/certs/server.key \
@@ -471,16 +518,20 @@ sudo setsebool -P httpd_can_network_connect 1
 
 ## HTTPS / SSL Setup
 
-### Docker — HTTPS Setup
+DC Manager Pro runs on HTTPS by default (Docker). HTTP on port 80 automatically redirects to HTTPS on port 443.
 
-The Docker deployment serves HTTPS on port 443 by default. HTTP (port 80) redirects automatically.
+### Docker — HTTPS Setup
 
 ```bash
 # Generate self-signed certificate (valid 10 years)
+cd /appdata/dc-prod
 ./scripts/generate-certs.sh 192.168.86.130   # ← your server IP
-# Creates: certs/server.crt and certs/server.key
 
-# Start (certs are automatically mounted into Nginx)
+# Output:
+# certs/server.crt  ← certificate (public)
+# certs/server.key  ← private key  (keep secret)
+
+# Deploy
 docker compose up -d --build
 
 # Access
@@ -488,30 +539,50 @@ https://YOUR-SERVER-IP      # main app
 http://YOUR-SERVER-IP       # auto-redirects to HTTPS
 ```
 
+Your browser will show a security warning because the certificate is self-signed. This is expected for internal tools.
+
+**Chrome/Edge:** Click **Advanced** → **Proceed to YOUR-IP (unsafe)**  
+**Firefox:** Click **Advanced** → **Accept the Risk and Continue**
+
 ### Suppress the Browser Warning (Optional)
 
-Self-signed certificates show a browser security warning. To suppress it:
-
-**Option A — Add to browser trust store (easiest for internal use):**
-```bash
-# Copy cert to your workstation
-scp user@server:/appdata/dc-prod/certs/server.crt ~/dc-manager.crt
-
-# Windows: Double-click dc-manager.crt → Install → Trusted Root CAs
-# macOS:   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/dc-manager.crt
-# Ubuntu:  sudo cp ~/dc-manager.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
-# Chrome:  Settings → Privacy → Security → Manage Certificates → Authorities → Import
+**Windows:**
+```
+1. Open certs/server.crt
+2. Click "Install Certificate"
+3. Select "Local Machine" → "Place all certificates in the following store"
+4. Browse → "Trusted Root Certification Authorities"
+5. Finish → restart browser
 ```
 
-**Option B — Use a CA-signed certificate (production):**
+**macOS:**
 ```bash
-# If your server has a DNS name, use Let's Encrypt:
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain certs/server.crt
+# Restart browser
+```
 
-# Copy certs to dc-prod/certs/
-sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem /appdata/dc-prod/certs/server.crt
-sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem   /appdata/dc-prod/certs/server.key
+**Linux (Chrome/Edge):**
+```bash
+sudo cp certs/server.crt /usr/local/share/ca-certificates/dc-manager.crt
+sudo update-ca-certificates
+# Restart browser
+```
+
+**Linux (Firefox):** Go to **Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import** → select `server.crt` → trust for websites.
+
+### Renewing the Certificate
+```bash
+cd /appdata/dc-prod
+./scripts/generate-certs.sh 192.168.86.130
+docker compose restart frontend
+```
+
+### Using Your Own Certificate (.crt + .key)
+```bash
+cp your-cert.crt /appdata/dc-prod/certs/server.crt
+cp your-cert.key /appdata/dc-prod/certs/server.key
+chmod 600 /appdata/dc-prod/certs/server.key
 docker compose restart frontend
 ```
 
@@ -523,7 +594,7 @@ docker compose restart frontend
 |----------|------------|------------|--------|
 | admin    | Admin@123  | Superuser  | Full access |
 
-> ⚠️ **Change the default password immediately after first login via Admin → Users.**
+> ⚠ **Change the default password immediately after first login via Admin → Users.**
 
 ---
 
@@ -533,35 +604,49 @@ docker compose restart frontend
 dc-prod/
 ├── backend/
 │   ├── Dockerfile
-│   ├── main.py               ← FastAPI app, all API routes
-│   ├── init.sql              ← PostgreSQL schema (no demo data)
+│   ├── main.py                       ← FastAPI app — all API routes and business logic
+│   ├── init.sql                      ← PostgreSQL schema + default admin user
 │   └── requirements.txt
 ├── frontend/
 │   ├── Dockerfile
-│   └── index.html            ← Full SPA (HTML + CSS + JS in one file)
+│   └── index.html                    ← Full SPA (HTML + CSS + JS — single file)
 ├── nginx/
-│   └── nginx.conf            ← HTTPS, TLS 1.2/1.3, HTTP→HTTPS redirect
-├── certs/                    ← SSL certificate (generated by script)
-│   ├── server.crt
-│   └── server.key
+│   └── nginx.conf                    ← HTTPS, TLS 1.2/1.3, HTTP→HTTPS redirect
+├── certs/                            ← SSL certificates (generated by script)
+│   ├── server.crt                    ← Certificate — public, install on browsers
+│   └── server.key                    ← Private key — keep secret, never commit
+├── monitoring/                       ← Netdata configuration
+│   ├── netdata.conf                  ← Parent node config (history, streaming accept, web access)
+│   ├── stream.conf                   ← Child node template (parent IP, API key)
+│   ├── netdata-child.conf            ← Reference config for manual child installs
+│   └── health_alarm_notify.conf      ← Alert notification settings (email/Slack)
 ├── scripts/
-│   ├── generate-certs.sh         ← Generate self-signed SSL certificate
-│   ├── entrypoint-backup.sh      ← Backup container entrypoint
-│   ├── manual-backup.sh          ← Run a manual backup
-│   ├── restore.sh                ← Restore from backup
-│   ├── export-offline.sh         ← Bundle for air-gapped servers
-│   ├── import-offline.sh         ← Install on air-gapped servers
-│   ├── migrate-volumes.sh        ← Migrate from named to local volumes
-│   ├── migrate-server-types.sql  ← Update server_type options
-│   └── migrate-add-zone.sql      ← Add zone column to racks table
-├── volumes/                      ← ALL persistent data — back this up!
-│   ├── postgres/                 ← PostgreSQL data files
+│   ├── generate-certs.sh             ← Generate self-signed SSL certificate
+│   ├── entrypoint-backup.sh          ← Backup container cron entrypoint
+│   ├── manual-backup.sh              ← Trigger a manual database backup
+│   ├── restore.sh                    ← Restore database from backup file
+│   ├── export-offline.sh             ← Bundle app + images for air-gapped server
+│   ├── import-offline.sh             ← Install bundle on air-gapped server
+│   ├── migrate-volumes.sh            ← Migrate from named to local volumes
+│   ├── migrate-server-types.sql      ← DB migration: add new server_type options
+│   ├── migrate-add-zone.sql          ← DB migration: add zone column to racks
+│   ├── save-netdata-offline.sh       ← Save parent Netdata image for air-gapped VM
+│   ├── load-netdata-offline.sh       ← Load parent Netdata image on air-gapped VM
+│   ├── save-netdata-child-offline.sh ← Package Netdata for air-gapped child nodes
+│   ├── install-netdata-child-systemd.sh ← Install Netdata child as systemd service
+│   └── install-netdata-child-docker.sh  ← Install Netdata child as Docker container
+├── volumes/                          ← ALL persistent data — back this up!
+│   ├── postgres/                     ← PostgreSQL data files
+│   ├── netdata/                      ← Netdata metric history and cache
+│   │   ├── config/                   ← Netdata runtime config (auto-generated)
+│   │   ├── lib/                      ← Metric history database
+│   │   └── cache/                    ← Working cache (safe to clear)
 │   └── backups/
-│       ├── daily/                ← Auto daily (30 day retention)
-│       ├── weekly/               ← Auto weekly (12 week retention)
-│       └── manual/               ← Manual backups
-├── docker-compose.yml
-├── .env.example
+│       ├── daily/                    ← Auto daily backups (30 day retention)
+│       ├── weekly/                   ← Auto weekly backups (12 week retention)
+│       └── manual/                   ← Manual backups
+├── docker-compose.yml                ← 5 services: postgres, backend, frontend, backup, netdata
+├── .env.example                      ← Environment variable template
 └── README.md
 ```
 
@@ -584,160 +669,397 @@ dc-prod/
 
 ---
 
-## Features
+## Usage Guide
+
+### 🔐 Login & Session
+
+Open `https://YOUR-SERVER-IP` in your browser. Accept the self-signed certificate warning.
+
+| Role | Can do |
+|------|--------|
+| **Superuser** | Everything — users, permissions, all data, audit log |
+| **Admin** | Add/edit/delete assets, racks, stock, connectivity |
+| **Viewer** | Read-only — view and export everything |
+
+**Default login:** `admin` / `Admin@123` — change immediately after first login via **Admin → Users**.
+
+Sessions auto-expire after **10 minutes of inactivity**. A warning banner counts down the last 60 seconds. Click **Stay Logged In** to reset.
+
+---
+
+### ◈ Dashboard
+
+Home screen — datacenter health at a glance.
+
+**KPI cards** (top row) are clickable — tap any to jump to that section:
+
+| Card | Goes to |
+|------|---------|
+| Total Assets | All Assets |
+| Servers | All Assets |
+| Racks | Rack View |
+| Connections | Connectivity |
+| Stock SKUs | Stock / Parts |
+| Low Stock | Stock / Parts (items ≤ 5 units) |
+
+Below the cards: **Assets by Type** bar chart, **Stock Summary** with fill bars, and **Recent Assets** showing the last 8 modified items.
+
+---
+
+### ◻ All Assets
+
+Full inventory table for every physical and virtual asset.
+
+**Toolbar:**
+```
+[ 🔍 Search hostname/IP/serial/rack ] [ All Types ▾ ] [ All Status ▾ ] [ 50/pg ▾ ] [ ⊞ Cols ] [ + Add ]
+```
+
+**Table capabilities:**
+- Real-time search across hostname, IP, serial number, rack ID
+- Sort any column — click header, click again to reverse
+- Resize columns — drag the edge of any column header
+- Toggle visible columns — click **⊞ Cols** button
+- Configurable page size — 50 / 100 / All
+- Row checkboxes + select-all → bulk delete with confirmation
+
+**Asset form tabs:**
+
+*General* — Hostname, Asset Type, Status, Datacenter, Rack ID, U Start, U Height, Asset Tag, Serial Number, PO Number, EOL Date, App/Asset Owner, Notes
+
+*Hardware* — Make, Model, and any custom fields defined in Field Manager
+
+*Network* — Prov IP, BMC IP, Data IP, Backup IP, MAC, VLAN, Additional IPs
+All IP fields are **clickable links** — clicking opens `https://ip` in a new tab (useful for BMC/iDRAC/iLO direct access)
+
+*Connectivity* — Add cable connections inline while editing an asset
+
+**Asset detail panel** — click any hostname to open:
+- **Info tab** — all fields in a clean read view, IP links clickable
+- **History tab** — full audit trail with timestamps, changed fields, and who made each change
+- **Topology tab** — draggable SVG network diagram showing the full cable path from this asset to its switch
+
+---
+
+### ▤ Rack View
+
+Visual diagrams of every rack in your datacenters.
+
+**Reading a rack card:**
+```
+R-PROD-01                              ✎  ✕
+[HYD-POD]  [Zone-1]  [Row-1]
+
+████████████░░░░░░░░░░░░░░  43%
+───────────────────────────────────────
+42 │  WEBAPPSERVER01 / SN12345678  │ 42
+36 │  PSQLDBSERVER01 / SN12345687  │ 36
+32 │  —                            │ 32  (empty)
+```
+
+- **Header line 1** — Rack ID + edit (✎) and delete (✕) buttons
+- **Header line 2** — Datacenter · Zone · Row as colour chips
+- **Utilisation bar** — green < 60%, amber 60–85%, red > 85%
+- **Slots** — each row shows `HOSTNAME / SERIAL`, U number on both left and right
+- **Colour coding** — servers with the same hostname prefix share a colour (12-colour palette)
+
+**Toolbar:**
+```
+[ 🔍 Search racks ] [ Datacenter ▾ ] [ Zone ▾ ] [ Row ▾ ] [ + New Rack ] [ ↓ Export Rack ]
+```
+
+**Export Rack to Excel** produces:
+- *Rack Assets* sheet — hostname, serial, BMC IP, make, model, PO number per asset
+- *Full U Layout* sheet — every U including empty slots, for physical audit
+
+Click any asset slot to open its detail panel.
+
+---
+
+### ◫ Stock / Parts
+
+Spare parts inventory with transaction tracking.
+
+**Per item fields:** Category, Brand, Model, Spec, Form factor, Interface, Total / Available / Allocated quantity, Location, Unit cost
+
+**Transactions** — click + or − on any item to record a movement:
+- **IN** — receiving new stock
+- **OUT** — consuming stock
+- **ALLOCATE** — reserve for a job
+- **RETURN** — return allocated stock
+- **ADJUST** — manual correction
+
+Every transaction is logged with quantity, type, and timestamp. Items with ≤ 5 available units are flagged as **Low Stock** in the sidebar and dashboard.
+
+---
+
+### ⇄ Connectivity
+
+Full physical cable path tracking from server to switch.
+
+**Path model:**
+```
+Server (hostname / port)
+  → LIU-A (rack / hostname / port)
+    → LIU-B (rack / hostname / port)   [optional pass-through]
+      → Switch (hostname / port)
+```
+
+**Per record:** Cable type (Fiber SM, Fiber MM, DAC, Copper), Speed (1G/10G/25G/40G/100G), VLAN, Purpose
+
+**Table capabilities:**
+- Sort by Server, Port, Switch, Cable, Speed, VLAN, Purpose (click header)
+- Resize columns
+- Filter by cable type and speed using dropdowns
+- Select-all checkboxes + bulk delete
+- Column chooser — toggle LIU-B column
+
+**Topology diagram** — open any asset → Topology tab to see a draggable visual map of its full cable path.
+
+---
+
+### ↓ Export / Import
+
+**Export** (top-right button on Assets/Stock/Connectivity pages):
+Downloads a full `.xlsx` workbook with sheets: Assets, Racks, Stock, Connectivity — all fields included, including `rack_zone` and `rack_row`.
+
+**Export Rack View** (toolbar button on Rack View page):
+Downloads `.xlsx` with Rack Assets + Full U Layout sheets. Respects active DC/Zone/Row filters.
+
+**Import** (top-right button → choose file):
+Upload a filled `.xlsx` and select sheet type. Rules:
+- Row 1 must be the header row — do not modify headers
+- IDs are auto-generated — leave the ID column blank
+- Duplicate hostnames on import → existing record is updated
+- Slot conflicts → row skipped, counted in result summary
+- `rack_zone` / `rack_row` values auto-create rack records if they don't exist
+
+**Templates** — download blank template workbooks from the Import dialog.
+
+---
+
+### ⚙ Field Manager *(Superuser only)*
+
+Add custom hardware fields to asset forms without touching any code.
+
+Navigate to **Admin → Field Manager**:
+- **Add Field** — choose type: Text, Number, Date, or Select (with options list)
+- **Edit** any field — change label, placeholder, options, or required flag
+- Dropdown fields with "Other" option automatically show a free-text box when selected
+- System fields (Make, Model, Serial, etc.) can have their labels edited but not deleted
+- Changes apply immediately to all asset forms
+
+---
+
+### 🔒 Permissions *(Superuser only)*
+
+Navigate to **Admin → Permissions** to see the full permission matrix for each role.
+Roles are fixed (Superuser / Admin / Viewer) — permissions are not individually customisable.
+
+---
+
+### 👤 Users *(Superuser only)*
+
+Navigate to **Admin → Users**:
+- Create new users with username, password, and role
+- Edit existing users — change name, password, role
+- Delete users (cannot delete your own account)
+- Password is stored as bcrypt hash — not recoverable, only resettable
+
+---
+
+### ◑ Light / Dark Mode
+
+Click the **◑** button in the sidebar footer to toggle between:
+- **Dark mode** (default) — glassmorphism zinc/slate palette with ambient gradients
+- **Light mode** — cool slate-blue tinted theme
+
+Preference is saved in the browser and persists across sessions.
+
+---
+
+## Features Reference
 
 ### Assets
 - Full CRUD with tabbed form: General / Hardware / Network / Connectivity
 - **General fields:** Hostname, Type, Status, Datacenter, Rack ID, U Position, Asset Tag, Serial Number, PO Number, EOL Date, App/Asset Owner, Notes
-- **Network fields:** Provisioning IP (Prov IP), BMC IP *(clickable link → opens https://ip)*, Data IP, Backup IP, MAC, VLAN, Additional IPs
-- **Hardware fields:** Fully configurable via Field Manager (Superuser only)
-- **Asset History:** Full audit trail per asset — tracks creation, status changes, rack moves, hardware changes
-- **Slot conflict protection:** Warns before saving if rack+U position is already occupied; hard-fails on import
-- **Topology tab:** Draggable SVG network diagram showing cable path to switches/LIUs
-- Inline connectivity entry from asset form
+- **Network fields:** Prov IP, BMC IP (clickable → opens https://ip), Data IP, Backup IP, MAC, VLAN, Additional IPs
+- **Hardware fields:** Fully configurable via Field Manager
+- **Asset History:** Full audit trail — creation, status changes, rack moves, hardware changes
+- **Slot conflict protection:** Warns on save if U position occupied; hard-fails on import
+- **Topology tab:** Draggable SVG diagram showing full cable path
 - Export/Import via Excel
 
 ### Asset Table
-- Resizable columns (drag column edge)
-- Column chooser (toggle which columns are visible)
-- Sort by any column (click header, toggle asc/desc)
+- Resizable columns, sort any column, column chooser
 - Items per page: 50 / 100 / All with pagination
-- Filter by Type and Status
-- Real-time search: hostname, IP, serial, rack
-- Multi-select checkboxes + select-all in header
-- Bulk delete (admin/superuser only) with confirmation
+- Filter by Type and Status, real-time search
+- Multi-select + bulk delete with confirmation
 
 ### Asset Types
 Server, VM, Switch, Router, Firewall, LIU, Patch Panel, PDU, KVM, Other
 
 ### Server Types (Hardware field)
 Rack Server, Tower, Blade, Dense Server, High-Density, Virtual, VM,
-Type-A through Type-F, Type-S, Type-T, Type-X through Type-Z, Other (with free-text input)
+Type-A through Type-F, Type-S, Type-T, Type-X through Type-Z, Other (free-text)
 
 ### Field Manager (Superuser)
 - Add custom hardware fields: text, number, dropdown, textarea
-- Edit existing field labels, options, placeholder on all fields including system fields
-- Dropdown fields with "Other" option automatically show a free-text input box
+- Edit labels, options, placeholder on all fields including system fields
+- "Other" in dropdowns shows free-text input automatically
 - Live preview of hardware form
 
 ### Rack View
-- Visual rack diagrams showing U positions and assets
-- **3-level hierarchy:** Datacenter → Zone → Row
-- DC chip on line 1, Zone + Row chips side-by-side on line 2 of each rack card
-- Each slot shows: **hostname / serial number** on one line
-- U-position numbers on both left and right side of every slot
-- Colour-coded by hostname prefix — same prefix = same colour (12-colour palette)
-- Utilisation bar: green <60%, amber 60–85%, red >85%
-- Filter by Datacenter, Zone, and Row independently
-- Search box filters by rack ID or datacenter name
-- Edit rack details (✎ — admin/superuser), Delete empty racks (✕ — superuser)
-- Click any asset in rack diagram to open asset detail
-- **Export Rack to Excel:** Rack Assets sheet + Full U Layout sheet
-
-### Rack Fields
-| Field | Description |
-|-------|-------------|
-| Rack ID | Unique identifier (e.g. R-01, INHYDNARF1NR218) |
-| Datacenter | Physical datacenter or pod (e.g. HYN-POD-2) |
-| Zone | Zone within the datacenter (e.g. Zone-1) |
-| Row | Row within the zone (e.g. Row-15) |
-| Total U | Rack height in U (default 42) |
-| Notes | Optional notes |
+- Visual rack diagrams, 3-level hierarchy: Datacenter → Zone → Row
+- hostname / serial on every slot, U numbers both sides
+- Hostname-prefix colour grouping (12 colours), utilisation bar (green/amber/red)
+- Filter by DC/Zone/Row, search by rack ID
+- Edit (✎) and delete (✕) racks, export to Excel (Rack Assets + Full U Layout)
 
 ### Stock Management
-- SKU tracking with category, brand, model, spec, form factor
-- Transactions: IN / OUT / ALLOCATE / RETURN / ADJUST
-- Per-SKU transaction history
-- Low stock warning (≤5 units)
+- SKU tracking with full hardware spec fields
+- Transactions: IN / OUT / ALLOCATE / RETURN / ADJUST with history
+- Low stock alert (≤ 5 units)
 
 ### Connectivity
-- Full path tracking: Server Port → LIU-A → LIU-B → Switch Port
-- Cable type (Fiber SM/MM, DAC, Copper), speed, VLAN, purpose
-- Resizable columns, sort by any column
-- Filter by cable type and speed
-- Select-all + bulk delete
-- Topology diagram per asset (Info → Topology tab)
+- Full path: Server → LIU-A → LIU-B → Switch with cable/speed/VLAN/purpose
+- Resizable columns, sort, filter by cable type and speed, bulk delete
 
 ### Asset History / Audit Log
-Every asset change is logged automatically:
-- `ASSET_CREATED` — new asset added (green)
-- `ASSET_RELOCATED` — rack, DC, or U position changed (yellow)
-- `ASSET_STATUS_CHANGE` — Online/Offline/Maintenance etc. (purple)
-- `ASSET_UPDATED` — any other field change (blue)
-- `ASSET_DELETED` — asset removed (red)
+| Event | Colour |
+|-------|--------|
+| ASSET_CREATED | Green |
+| ASSET_RELOCATED | Yellow |
+| ASSET_STATUS_CHANGE | Purple |
+| ASSET_UPDATED | Blue |
+| ASSET_DELETED | Red |
 
-Each log entry records: what changed, who made the change, and timestamp.  
-Access via the **History** tab in any asset detail panel.
+Each entry records: changed fields, old → new values, user, timestamp.
 
 ### Session Security
-- Auto-logout after **10 minutes of inactivity**
-- Warning banner with 60-second countdown before logout
-- "Stay Logged In" button resets the timer
-- Activity tracked: mouse move, keyboard, scroll, touch
+- Auto-logout after 10 minutes of inactivity
+- 60-second warning banner with "Stay Logged In" button
+- Activity tracked: mouse, keyboard, scroll, touch
 
 ### UI
-- **Glassmorphism dark mode** (default) — frosted glass panels, zinc/slate palette, ambient gradients
-- **Light mode** — cool slate-blue tinted theme, glass inputs, clean readable layout
-- Toggle with ◑ button in sidebar — preference saved in browser
-- Clickable KPI cards on dashboard navigate to sections
-- Sidebar navigation with role-aware menu items
+- Glassmorphism dark mode (default) — frosted glass panels, zinc/slate palette
+- Light mode — cool slate-blue tinted theme
+- Clickable KPI dashboard cards
 - Toast notifications, modal forms, column chooser
-- Version and developer credit in sidebar footer
 
 ---
 
-## Export / Import
 
-### Export (Download)
-Downloads a full Excel workbook with all data across sheets:
-- **Assets** — all assets with all fields including rack_zone and rack_row
-- **Racks** — all racks with datacenter, zone, row
-- **Stock** — all stock items
-- **Connectivity** — all cabling records
+## Netdata Usage Guide
 
-### Export Rack View
-Downloads rack layout as Excel with two sheets:
-- **Rack Assets** — one row per asset: hostname, serial, BMC IP, Mgmt IP, make, model, PO number
-- **Full U Layout** — every U position including empty slots for physical audit
+### What Netdata Monitors
 
-Respects current DC/Zone/Row filter. Filename includes DC name and date.
+When Netdata runs alongside DC Manager, it monitors:
 
-### Import Templates (Download)
-Single Excel workbook with template sheets:
-- **Assets_Template** — includes `datacenter`, `rack_zone`, `rack_row`, `rack_id` columns.
-  When importing, if `rack_zone` / `rack_row` are provided, the rack record is **automatically
-  created or updated** in the racks table — no separate rack import needed.
-- **Stock_Template**
-- **Connectivity_Template**
-
-### Assets Import Column Reference
-
-| Column | Required | Notes |
-|--------|----------|-------|
-| hostname | ✓ | Must be unique |
-| asset_type | | Default: Server |
-| status | | Default: Online |
-| datacenter | | e.g. HYN-POD-2 |
-| rack_zone | | e.g. Zone-1 — auto-creates rack |
-| rack_row | | e.g. Row-1 — auto-creates rack |
-| rack_id | | e.g. R-01 |
-| u_start | | U position (number) |
-| u_height | | Default: 1 |
-| prov_ip | | Provisioning IP (also accepts mgmt_ip) |
-| bmc_ip | | BMC/iDRAC/iLO IP (also accepts oob_ip) |
-| data_ip | | Data network IP |
-| bkup_ip | | Backup network IP |
-| mac_addr | | MAC address |
-| vlan | | VLAN ID |
-| asset_tag | | Physical asset tag |
-| serial_number | | Serial number |
-| po_number | | Purchase order number |
-| eol_date | | End of life date (YYYY-MM-DD) |
-| app_owner | | Application/asset owner |
-| notes | | Free text notes |
-| *(custom hw fields)* | | Any field_key from Field Manager |
+| Source | What you see |
+|--------|-------------|
+| **Host machine** | CPU per-core, RAM, swap, disk I/O, disk space, network per interface |
+| **dcm_postgres** | Container CPU/RAM, plus: queries/sec, connections, cache hit ratio, locks |
+| **dcm_backend** | Container CPU/RAM/network/disk I/O |
+| **dcm_frontend** | Container CPU/RAM/network |
+| **dcm_backup** | Container CPU/RAM |
+| **Child nodes** | All of the above for every enrolled bare metal / VM |
+| **Alerts** | Auto-fires when: CPU > 85%, RAM > 90%, disk > 85%, container restarts, postgres connection spike |
 
 ---
+
+### Opening the Dashboard
+
+```
+http://YOUR-SERVER-IP:19999
+```
+
+No login required — access is restricted to internal network IPs by default (`monitoring/netdata.conf`).
+
+**Switching between machines:**
+Use the **host dropdown** in the top-right corner to switch between the DC Manager VM and any enrolled child nodes.
+
+---
+
+### Dashboard Sections
+
+| Sidebar section | What it shows |
+|----------------|---------------|
+| **System Overview** | High-level CPU / RAM / disk / network summary |
+| **CPU** | Per-core utilisation, frequency, softirq, steal time |
+| **Memory** | RAM used/cached/free, swap, page faults |
+| **Disks** | Per-disk read/write throughput and latency |
+| **Mount Points** | Disk space usage per filesystem |
+| **Network Interfaces** | Bandwidth in/out, packets, errors per NIC |
+| **Processes** | Running count, forks, memory per process group |
+| **Docker** (cgroups) | Per-container CPU/RAM/network/IO |
+| **Postgres** | Queries/sec, connections, cache hit, locks, rows |
+
+---
+
+### Built-in Alerts
+
+Netdata fires alerts automatically — no setup required. The **bell icon** (top toolbar) shows active alerts.
+
+| Alert | Condition | Action |
+|-------|-----------|--------|
+| High CPU | > 85% for 5 min | Check `docker stats` for runaway container |
+| Low RAM | < 10% free | Check container memory limits or add RAM |
+| Disk full | > 85% used | Clean `volumes/backups/` old backup files |
+| PostgreSQL connections | > 80% of max_connections | Check for connection leaks |
+| Container restart | Any container restarts | Check `docker logs CONTAINER_NAME` |
+
+---
+
+### Enabling Alert Notifications
+
+Edit `monitoring/health_alarm_notify.conf`, then restart Netdata:
+
+```bash
+# Email (needs postfix on host):
+SEND_EMAIL="YES"
+DEFAULT_RECIPIENT_EMAIL="ops@yourcompany.com"
+
+# Slack:
+SEND_SLACK="YES"
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+DEFAULT_RECIPIENT_SLACK="#dc-manager-alerts"
+
+# Apply:
+docker restart dcm_netdata
+```
+
+---
+
+### Increasing Data Retention
+
+Default: 24 hours of per-second data. Edit `monitoring/netdata.conf`:
+
+```ini
+[global]
+    dbengine disk space = 4096   # 4GB ≈ several days for a small cluster
+```
+
+Then: `docker restart dcm_netdata`
+
+---
+
+### Useful Commands
+
+```bash
+# Check Netdata is running
+docker ps | grep dcm_netdata
+
+# Live logs (look for errors or connection messages)
+docker logs dcm_netdata -f
+
+# Restart after config change
+docker restart dcm_netdata
+
+# Check if a child node connected
+docker logs dcm_netdata 2>&1 | grep -i "connected\|streaming\|child-name"
+```
+
 
 ## Database Migrations (Existing Installs)
 
@@ -768,7 +1090,7 @@ PGPASSWORD=YourPassword psql -U dcuser -d dcmanager -f scripts/migrate-server-ty
 # Restore
 ./scripts/restore.sh volumes/backups/daily/dcmanager_2026-03-09_020001.sql.gz
 
-# Automated backups run automatically inside the backup container:
+# Auto backups run automatically inside the backup container:
 # Daily  02:00 AM → volumes/backups/daily/   (30 day retention)
 # Weekly Sunday 03:00 → volumes/backups/weekly/ (12 week retention)
 ```
@@ -848,9 +1170,344 @@ ALLOWED_ORIGINS=*         # CORS — use * for internal tools
 
 ---
 
+
+
+## Monitoring — Adding Child Nodes
+
+The Netdata container running with DC Manager is the **parent (master) node**. You can add any number of bare metal servers, VMs, or other machines as **child nodes** — they stream their metrics to the parent and appear in the same dashboard.
+
+### How Streaming Works
+
+```
+Child node (bare metal / VM)          Parent (DC Manager VM)
+┌────────────────────────────┐        ┌──────────────────────────────┐
+│  Netdata agent             │        │  dcm_netdata container       │
+│  (systemd or Docker)       │──────▶ │  dashboard: :19999           │
+│                            │ push   │  stores all metrics          │
+│  collects host metrics     │ on     │  serves unified dashboard    │
+│  every second              │ :19999 │  fires alerts for all nodes  │
+└────────────────────────────┘        └──────────────────────────────┘
+```
+
+The child uses the `NETDATA_STREAM_API_KEY` from your `.env` file to authenticate. Set this key once and use it on every child.
+
+---
+
+### How the API Key Works
+
+The streaming API key is a UUID that child nodes send to the parent to authenticate. The parent checks this key and either accepts or rejects the stream. This is why you get `code=403` — the key the child sends does not match what the parent is configured to accept.
+
+**Important:** Netdata does NOT substitute shell variables (`${VAR}`) in its config files. The key must be written as a literal UUID. The `netdata-entrypoint.sh` script handles this automatically — it reads `NETDATA_STREAM_API_KEY` from the environment and writes the actual UUID into `stream.conf` before Netdata starts.
+
+---
+
+### Step-by-step: Set Up the API Key
+
+**Step 1 — Generate a UUID (on your DC Manager VM):**
+```bash
+uuidgen
+# Example output: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+# Note it down — you'll need it in every child install command
+```
+
+**Step 2 — Set it in `.env`:**
+```bash
+nano /appdata/dc-prod/.env
+# Set this line:
+# NETDATA_STREAM_API_KEY=a1b2c3d4-e5f6-7890-abcd-ef1234567890
+```
+
+**Step 3 — Restart Netdata to apply:**
+```bash
+cd /appdata/dc-prod
+docker compose restart netdata
+
+# Verify it started and loaded the key:
+docker logs dcm_netdata 2>&1 | grep -i "stream\|api key\|accept" | head -10
+```
+
+**Step 4 — Verify the parent is ready to accept streams:**
+```bash
+# Check the generated stream.conf inside the container
+docker exec dcm_netdata cat /etc/netdata/stream.conf
+# You should see your actual UUID in a [UUID] section, NOT ${NETDATA_STREAM_API_KEY}
+```
+
+---
+
+### Fixing a Running Child That Gets 403
+
+If your child node is showing `code=403` or `remote server denied access`:
+
+```bash
+# On the child machine — check what key it's sending
+cat /etc/netdata/stream.conf
+# Look for: api key = <UUID>
+
+# Compare with what the parent accepts:
+docker exec dcm_netdata cat /etc/netdata/stream.conf
+# The UUID in [UUID_SECTION_HEADER] must match the child's api key = line
+
+# If they don't match — fix the child:
+# Edit /etc/netdata/stream.conf on the child, update api key = to match
+# Then restart the child agent:
+systemctl restart netdata           # systemd child
+# or:
+docker restart netdata-child        # Docker child
+```
+
+---
+
+### Option A — Enroll a Child as a systemd Service
+
+Use when: the target machine is bare metal, has no Docker, or you want the agent to start independently of Docker.
+
+**A1 — Machine has internet:**
+
+```bash
+# Copy installer to target
+scp /appdata/dc-prod/scripts/install-netdata-child-systemd.sh user@SERVER:/tmp/
+
+# Run on the target machine:
+sudo bash /tmp/install-netdata-child-systemd.sh   --parent 192.168.86.130   --apikey a1b2c3d4-e5f6-7890-abcd-ef1234567890   --name   baremetal-01
+```
+
+**A2 — Machine has NO internet (air-gapped):**
+
+Step 1 — On any internet machine, create the offline package:
+```bash
+cd /appdata/dc-prod
+./scripts/save-netdata-child-offline.sh
+# Output: netdata-child-offline-YYYYMMDD.tar.gz  (~80MB)
+```
+
+Step 2 — Transfer to the target:
+```bash
+scp netdata-child-offline-YYYYMMDD.tar.gz user@SERVER:/opt/
+scp /appdata/dc-prod/scripts/install-netdata-child-systemd.sh user@SERVER:/opt/
+```
+
+Step 3 — Install on the target (no internet needed):
+```bash
+cd /opt
+tar -xzf netdata-child-offline-YYYYMMDD.tar.gz
+
+sudo bash /opt/install-netdata-child-systemd.sh   --parent  192.168.86.130   --apikey  a1b2c3d4-e5f6-7890-abcd-ef1234567890   --name    baremetal-01   --offline /opt/pkg/netdata-static-installer.gz.run
+```
+
+**Managing a systemd child:**
+```bash
+systemctl status  netdata          # status
+systemctl restart netdata          # restart after config change
+journalctl -u netdata -f           # live logs
+journalctl -u netdata --no-pager | grep -i connected   # verify streaming
+systemctl stop    netdata          # stop
+```
+
+**Removing a systemd child:**
+```bash
+# Step 1 — Stop and remove Netdata on the child machine
+sudo systemctl stop netdata && sudo systemctl disable netdata
+
+# If installed via kickstart (online method):
+sudo /usr/libexec/netdata/netdata-uninstaller.sh --yes --env /etc/netdata/.environment
+
+# If installed via apt:
+sudo apt-get remove --purge netdata -y && sudo apt-get autoremove -y
+
+# If installed via dnf:
+sudo dnf remove netdata -y
+
+# Step 2 — Clean up data and config on the child machine
+sudo rm -rf /etc/netdata /var/lib/netdata /var/cache/netdata /var/log/netdata
+sudo systemctl daemon-reload
+
+# Step 3 — Remove the stale node from the parent dashboard
+# (see: Cleaning Up Stale Nodes section below)
+```
+
+---
+
+### Option B — Enroll a Child as a Docker Container
+
+Use when: the target machine already runs Docker, or you prefer container-based management.
+
+**B1 — Machine has internet:**
+
+```bash
+scp /appdata/dc-prod/scripts/install-netdata-child-docker.sh user@SERVER:/tmp/
+
+sudo bash /tmp/install-netdata-child-docker.sh   --parent 192.168.86.130   --apikey a1b2c3d4-e5f6-7890-abcd-ef1234567890   --name   baremetal-01
+```
+
+**B2 — Machine has NO internet (air-gapped):**
+
+Step 1 — On any internet machine, save the Docker image:
+```bash
+cd /appdata/dc-prod
+./scripts/save-netdata-child-offline.sh --docker
+# Output: netdata-image-YYYYMMDD.tar  (~200MB)
+```
+
+Step 2 — Transfer to the target:
+```bash
+scp netdata-image-YYYYMMDD.tar user@SERVER:/opt/
+scp /appdata/dc-prod/scripts/install-netdata-child-docker.sh user@SERVER:/opt/
+```
+
+Step 3 — Install on the target (no internet needed):
+```bash
+sudo bash /opt/install-netdata-child-docker.sh   --parent  192.168.86.130   --apikey  a1b2c3d4-e5f6-7890-abcd-ef1234567890   --name    baremetal-01   --offline /opt/netdata-image-YYYYMMDD.tar
+```
+
+**Managing a Docker child:**
+```bash
+docker ps | grep netdata-child              # status
+docker logs netdata-child -f               # live logs
+docker logs netdata-child 2>&1 | grep -i connected   # verify streaming
+docker restart netdata-child               # restart after config change
+docker stop    netdata-child               # stop
+docker start   netdata-child               # start
+```
+
+**Removing a Docker child:**
+```bash
+# Step 1 — Stop and remove the container on the child machine
+docker stop netdata-child && docker rm netdata-child
+docker rmi netdata/netdata:stable          # optional — frees ~200MB
+
+# Step 2 — Remove config and data on the child machine
+sudo rm -rf /etc/netdata /var/lib/netdata /var/cache/netdata
+
+# Step 3 — Remove the stale node from the parent dashboard
+# (see: Cleaning Up Stale Nodes section below)
+```
+
+---
+
+### Cleaning Up Stale Nodes
+
+When you remove a child node (stop the agent + delete its files), the parent keeps its
+historical data and shows it as **offline/stale** in the dashboard. It does not disappear
+automatically. Run these steps on the **parent (DC Manager VM)** to fully remove it.
+
+**Step 1 — Find the node's machine GUID**
+
+The GUID appears in the child's logs when it starts:
+```
+msg="MACHINE_GUID: GUID read from file..."
+```
+Or find it from the dashboard URL when you click on the stale node — it appears as `nodeName=` or in the node details panel.
+
+Or list all nodes the parent knows about:
+```bash
+docker exec dcm_netdata netdatacli list-all-nodes 2>/dev/null | head -30
+```
+
+**Step 2 — Delete the node via Netdata API**
+
+```bash
+# Replace with the actual GUID of the node to remove
+NODE_GUID="98fd31c6-183b-4a44-b978-d8ce5997b46a"
+
+# Delete via REST API (Netdata v2.x):
+curl -s -X DELETE   "http://localhost:19999/api/v2/nodes/${NODE_GUID}"
+
+# Alternative — via netdatacli:
+docker exec dcm_netdata netdatacli remove-stale-node "$NODE_GUID" 2>/dev/null
+```
+
+**Step 3 — Verify it's gone**
+
+Refresh the dashboard (`http://YOUR-SERVER-IP:19999`) and check the host dropdown — the node should no longer appear.
+
+If it still shows, restart Netdata:
+```bash
+docker restart dcm_netdata
+```
+
+**Step 4 — If node still persists (full database reset)**
+
+Only do this if the node won't go away after the above steps. This clears ALL historical
+data for ALL nodes and lets Netdata rebuild from scratch:
+
+```bash
+# Stop Netdata
+docker stop dcm_netdata
+
+# Remove the metric databases (data is lost — history will restart from zero)
+rm -f /appdata/dc-prod/volumes/netdata/lib/*.db
+rm -f /appdata/dc-prod/volumes/netdata/cache/*.db 2>/dev/null || true
+
+# Start again — Netdata rebuilds empty databases
+docker start dcm_netdata
+
+# Connected child nodes will automatically re-appear within 30 seconds
+# as they reconnect and stream fresh data
+```
+
+
+### Verify a Child is Streaming
+
+After installing any child, within 30 seconds:
+
+```bash
+# On the parent — check it received the connection
+docker logs dcm_netdata 2>&1 | grep -i "baremetal-01\|connected\|streaming" | tail -5
+
+# On the child (systemd)
+journalctl -u netdata --no-pager | grep -i connected | tail -3
+
+# On the child (Docker)
+docker logs netdata-child 2>&1 | grep -i connected | tail -3
+```
+
+Then open `http://192.168.86.130:19999` — the new node appears in the **host dropdown** (top-right corner).
+
+---
+
+### Adding More Nodes
+
+Repeat the same steps for every machine. Change only `--name` per node. The parent requires no restart.
+
+```bash
+# Third machine — systemd, online:
+sudo bash /tmp/install-netdata-child-systemd.sh   --parent 192.168.86.130 --apikey YOUR-KEY --name storage-01
+
+# Third machine — Docker, air-gapped:
+sudo bash /opt/install-netdata-child-docker.sh   --parent 192.168.86.130 --apikey YOUR-KEY --name storage-01   --offline /opt/netdata-image-YYYYMMDD.tar
+```
+
+---
+
+### Monitoring Scripts Reference
+
+| Script | Run on | Creates |
+|--------|--------|---------|
+| `scripts/save-netdata-offline.sh` | Internet machine | Parent Docker image tar (for air-gapped DC Manager VM) |
+| `scripts/load-netdata-offline.sh` | DC Manager VM | Loads parent image and starts |
+| `scripts/save-netdata-child-offline.sh` | Internet machine | systemd static installer package |
+| `scripts/save-netdata-child-offline.sh --docker` | Internet machine | Docker image tar for child nodes |
+| `scripts/save-netdata-child-offline.sh --both` | Internet machine | Both packages in one run |
+| `scripts/install-netdata-child-systemd.sh` | Child node | Installs + configures systemd child |
+| `scripts/install-netdata-child-docker.sh` | Child node | Installs + configures Docker child |
+
+
 ## Changelog
 
-### v3.0.1 (2026-03-14)
+### v3.0.3 (2026-03-15)
+- New: Netdata monitoring — parent-child streaming, all nodes in one dashboard at :19999
+- New: Multi-node support — enroll bare metal hosts, VMs, any Linux server as child nodes
+- New: Air-gapped workflow — `save-netdata-offline.sh` (parent) + `save-netdata-child-offline.sh` (children)
+- New: `install-netdata-child-systemd.sh` — dedicated systemd agent installer (online + offline)
+- New: `install-netdata-child-docker.sh` — dedicated Docker agent installer with --mode run|compose
+- New: Docker child configs written before container start (fixes silent no-stream bug)
+- New: `save-netdata-child-offline.sh --docker` — saves Docker image tar for air-gapped Docker children
+- New: `save-netdata-child-offline.sh --both` — creates both packages in one run
+- Fixed: `save-netdata-child-offline.sh` — SCRIPT_DIR resolved before cd, curl -fsSL, size sanity check
+- Removed: combined `install-netdata-child.sh` replaced by two focused scripts
+- New: `monitoring/` directory with parent config, child config, stream.conf, alarm notify config
+- New: `export-offline.sh` includes Netdata image in full offline bundle
 - New: Full glassmorphism UI — frosted glass sidebar, topbar, KPI cards, rack cards, modals, toasts
 - New: Ultra-modern zinc/slate dark palette (`#0a0a0f` base, `rgba` whisper-thin borders)
 - New: Ambient background gradient canvas (sky/violet/emerald radial gradients behind glass)
@@ -881,77 +1538,95 @@ ALLOWED_ORIGINS=*         # CORS — use * for internal tools
 - Changed: All toolbars horizontal with graceful wrapping (Assets, Connectivity, Stock, Rack View)
 
 ### v2.8.0 (2026-03-13)
-- New: HTTPS/TLS 1.2/1.3 — app served on port 443, HTTP redirects automatically
-- New: `scripts/generate-certs.sh` — generates self-signed certificate valid for 10 years
-- New: HSTS header (Strict-Transport-Security) for enhanced security
-- Changed: Nginx SSL hardening, docker-compose ports 443+80 (replaces APP_PORT 3000)
-- Changed: `certs/` directory mounted into Nginx container at runtime
-- Removed: APP_PORT variable — access is now always https://YOUR-IP
+- Added: HTTPS/SSL support — app now served on port 443, HTTP redirects to HTTPS automatically
+- Added: `scripts/generate-certs.sh` — generates self-signed certificate valid for 10 years
+- Added: TLS 1.2/1.3 only with strong cipher suite (ECDHE/DHE-AES-GCM)
+- Added: HSTS header (Strict-Transport-Security) for enhanced security
+- Updated: Nginx config with SSL hardening, HTTP→HTTPS redirect on port 80
+- Updated: docker-compose.yml exposes ports 443 and 80 (replaces APP_PORT 3000)
+- Updated: `certs/` directory mounted into Nginx container at runtime
+- Removed: APP_PORT variable — access is now always https://YOUR-IP with no port number
 
 ### v2.7.0 (2026-03-12)
-- New: Slot conflict check on manual asset add/edit — confirmation dialog with conflicting hostname and U range
-- New: Slot conflict check on import — conflicting rows skipped and counted as errors (hard fail)
-- New: `/api/assets/check-slot` endpoint — supports multi-U devices, excludes self on edit
-- Fixed: Rack view Zones filter now correctly populated from `zone` field; Rows from `row_label`
-- Fixed: Zones dropdown declared in HTML directly — no longer dynamically injected (was always empty on load)
-- Fixed: Rack data normalisation — `row_label` containing "zone" automatically treated as zone in UI
-- Fixed: Import accepts both `rack_zone`/`rack_row` and legacy `zone`/`row_label` column names
+- Added: Slot conflict check on manual asset add/edit — warns with confirmation dialog showing conflicting hostname and U position before saving
+- Added: Slot conflict check on import — rows that conflict with an existing asset are skipped and counted as errors (hard fail, no overwrite)
+- Added: `/api/assets/check-slot` endpoint — checks rack+U range occupancy, supports multi-U devices and excludes self on edit
+- Fixed: Rack view filter — Zone dropdown now correctly populated from `zone` field; Rows from `row_label`
+- Fixed: Rack view filter — rk-zone2 (Zones) dropdown now declared in HTML directly, no longer dynamically injected (was causing empty Zones dropdown on load)
+- Fixed: Rack data normalisation — if `zone` is null but `row_label` contains "zone", value is automatically treated as zone in the UI
+- Fixed: Import now accepts both `rack_zone`/`rack_row` and legacy `zone`/`row_label` column names in Assets sheet
 
 ### v2.6.0 (2026-03-12)
-- New: Asset multi-select checkboxes + select-all in header
-- New: Bulk delete toolbar button — visible only when assets selected, shows count, requires confirmation
-- New: Selection clears and table refreshes after bulk delete
+- Added: Asset multi-select with checkbox column in assets table
+- Added: Select-all checkbox in assets table header
+- Added: Bulk delete button in toolbar — appears when assets are selected, shows count, requires confirmation
+- Added: Bulk delete clears selection and refreshes table and dashboard on completion
 
 ### v2.5.0 (2026-03-12)
-- Fixed: Export rack_zone/rack_row column shift — zone was appearing in rack_row column
-- Fixed: Import backwards-compatible with both new and old column names for rack zone/row
+- Fixed: Export rack_zone/rack_row column mapping — zone value was appearing in rack_row column instead of rack_zone
+- Fixed: Export now uses explicit named variables for rack_zone and rack_row to prevent column shift
+- Fixed: Import accepts both `rack_zone`/`zone` and `rack_row`/`row_label` column names for backwards compatibility
 
 ### v2.4.0 (2026-03-11)
-- Fixed: Rack View crash "filterZ is not defined"
-- Changed: rack_zone and rack_row merged into Assets template (no separate Racks template)
-- New: Assets import auto-creates rack records from rack_zone/rack_row
-- New: Export includes rack_zone and rack_row in Assets sheet
+- Fixed: Rack View crash "filterZ is not defined" on load
+- Changed: rack_zone and rack_row columns merged into Assets import/export template (no separate Racks template)
+- Added: Assets import auto-creates/updates rack records when rack_zone or rack_row is provided
+- Added: Export includes rack_zone and rack_row columns in Assets sheet (joined from racks table)
 
 ### v2.3.0 (2026-03-11)
-- New: Separate Datacenter, Zone, Row fields on racks (new `zone` DB column)
-- New: Rack edit (✎) and delete (✕) buttons on rack cards
-- New: 3-level rack grouping: Datacenter → Zone → Row
-- New: Three independent rack view filters (Datacenter, Zone, Row)
-- New: Rack create/edit audit logging
-- New: Racks sheet in Excel export and import
+- Added: Separate Datacenter, Zone, and Row fields on racks (DB: new `zone` column in racks table)
+- Added: Rack edit mode — ✎ button on each rack card opens pre-filled edit form (admin/superuser)
+- Added: Rack delete — ✕ button (superuser only), blocked if rack has assets assigned
+- Added: 3-level rack grouping in Rack View: Datacenter → Zone → Row
+- Added: Three independent filter dropdowns in Rack View (Datacenter, Zone, Row)
+- Added: Each rack card shows DC · Zone · Row subtitle line
+- Added: Rack create/edit logged to audit trail
+- Added: Racks sheet in Excel export (rack_id, datacenter, zone, row_label, total_u)
+- Added: Racks import sheet support
+- Updated: Rack list API ordered by datacenter, zone, row_label, rack_id
 - DB migration: `scripts/migrate-add-zone.sql`
 
 ### v2.2.0 (2026-03-11)
-- New: Auto-logout after 10 min inactivity with 60s warning banner
-- New: Asset History tab — per-asset audit trail
-- New: Audit log for all asset changes (create, update, relocate, status, delete)
-- New: Resizable columns, column chooser, items-per-page, pagination in Assets table
-- Fixed: Assets table column mismatch (Prov IP showing server_type data)
-- Fixed: Dashboard Racks count including assets with rack references
+- Added: Auto-logout after 10 minutes of inactivity
+- Added: 60-second warning banner before logout with "Stay Logged In" button
+- Added: Asset History tab in asset detail panel — full per-asset audit trail
+- Added: Audit log written on every asset create, update, delete, relocate, status change
+- Added: Hardware field changes (disk, RAM, storage etc.) detected and logged
+- Added: `/api/assets/{id}/history` endpoint
+- Added: `/api/audit` endpoint (superuser — full audit log)
+- Added: Resizable columns in Assets table (drag column edge)
+- Added: Column chooser in Assets table (⊞ Columns button)
+- Added: Items per page selector (50 / 100 / All) in Assets table
+- Added: Pagination bar with page navigation in Assets table
+- Fixed: Assets table header/data column mismatch (Prov IP was showing server_type data)
+- Fixed: Dashboard Racks count now includes racks referenced by assets, not just explicitly created racks
 
 ### v2.1.0 (2026-03-10)
-- Fixed: Field Manager modal crash on Add Field / Edit Opts
-- Fixed: Export "Not authenticated" error
-- New: Light / Dark mode toggle (saved in browser)
-- New: PO Number, EOL Date, App Owner, Data IP, Backup IP fields
-- New: VM asset type, extended Server Type options
-- New: "Other" free-text in dropdown fields
-- Renamed: Management IP → Provisioning IP, OOB IP → BMC IP
+- Fixed: Field Manager "Add Field" and "Edit Opts" buttons not opening modal (null element crash)
+- Fixed: Export returning "Not authenticated" (was using window.location without auth header)
+- Added: Light mode with clean white/blue professional theme
+- Added: Dark/Light mode toggle button in sidebar (preference saved in browser)
+- Added: PO Number, EOL Date, App/Asset Owner fields in asset General tab
+- Added: Data IP and Backup IP fields in asset Network tab
+- Added: VM option to asset Type dropdown
+- Renamed: Management IP → Provisioning IP (Prov IP)
+- Renamed: OOB/IPMI IP → BMC IP (iDRAC / iLO / IPMI)
+- Added: Server Type options Type-A to Type-F, Type-S, Type-T, Type-X through Type-Z
+- Added: "Other" option in dropdown fields shows free-text input box
+- Added: Superuser can now edit options on all fields including system fields
+- Added: Version display and developer credit in sidebar footer
+- Removed: Demo credentials block from login page
+- Updated: Export and import templates updated with all new fields
 
 ### v2.0.0 (2026-03-09)
-- Production Docker stack: FastAPI + PostgreSQL + Nginx
-- JWT auth with role-based access (superuser / admin / user)
-- Full asset, stock, connectivity management
+- Production Docker deployment (FastAPI + PostgreSQL + Nginx)
+- JWT authentication with role-based access (superuser / admin / user)
+- Asset management with hardware fields, connectivity tracking
+- Stock management with transaction history
 - Excel export and import
-- Automated daily/weekly backups, offline/air-gapped deployment
+- Automated daily/weekly backups
+- Offline/air-gapped deployment support
+- All data in ./volumes/ for easy backup integration
 
 ### v1.0.0 (2026-03-08)
 - Initial single-file localStorage prototype
-
----
-
-<div align="center">
-
-**DC Manager Pro** · Built by pklakkoju · MIT License
-
-</div>

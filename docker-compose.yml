@@ -1,14 +1,19 @@
 version: "3.9"
 
-# ══════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # DC Manager Pro — Production Stack
+#
+# Deployment options:
+#   App only:             docker compose up -d --build db backend frontend backup
+#   App + Monitoring:     docker compose up -d --build
+#
 # All persistent data lives in ./volumes/
-# Point your backup solution to: /appdata/dc-prod/volumes/
-# ══════════════════════════════════════════════════
+# Point your backup solution at: /appdata/dc-prod/volumes/
+# ══════════════════════════════════════════════════════════════
 
 services:
 
-  # ── PostgreSQL Database ──────────────────────────
+  # ── PostgreSQL 16 ────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     container_name: dcm_postgres
@@ -31,13 +36,12 @@ services:
       retries: 5
       start_period: 20s
     networks:
-      dcm-net:
-        aliases: [db]
+      - dcm-net
     logging:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
-  # ── FastAPI Backend ──────────────────────────────
+  # ── FastAPI Backend ───────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -57,8 +61,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      dcm-net:
-        aliases: [backend]
+      - dcm-net
     expose: ["8000"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
@@ -70,7 +73,7 @@ services:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
-  # ── Nginx + Frontend (HTTPS) ─────────────────────
+  # ── Nginx + Frontend (HTTPS) ──────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -91,7 +94,7 @@ services:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
-  # ── Automated Daily Backups ──────────────────────
+  # ── Automated Backups ─────────────────────────────────────────
   backup:
     image: postgres:16-alpine
     container_name: dcm_backup
@@ -110,7 +113,66 @@ services:
     networks:
       - dcm-net
 
-# ── NO named volumes — everything in ./volumes/ ──
+  # ── Netdata — Real-time Monitoring ───────────────────────────
+  #
+  # Monitors:
+  #   • This host machine (CPU/RAM/disk/network)
+  #   • All Docker containers (dcm_postgres, dcm_backend, dcm_frontend, dcm_backup)
+  #   • Container logs and error rates via Docker socket
+  #   • Receives metrics streamed from child nodes (other servers)
+  #
+  # Dashboard: http://YOUR-SERVER-IP:19999
+  #
+  # To deploy WITHOUT Netdata:
+  #   docker compose up -d --build db backend frontend backup
+  #
+  # To deploy WITH Netdata (default):
+  #   docker compose up -d --build
+  #
+  # STREAM_API_KEY: set in .env — all child nodes must use this same key
+  #
+  netdata:
+    image: netdata/netdata:stable
+    container_name: dcm_netdata
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      - DO_NOT_TRACK=1
+      - NETDATA_CLAIM_TOKEN=
+      # API key child nodes use to authenticate.
+      # Set this in your .env file — generate with: uuidgen
+      # Must match --apikey used in install-netdata-child-*.sh
+      - NETDATA_STREAM_API_KEY=${NETDATA_STREAM_API_KEY:-CHANGE-THIS-STREAM-KEY}
+    # Custom entrypoint: writes stream.conf with the real API key
+    # before starting Netdata (Netdata cannot substitute env vars in config files)
+    entrypoint: ["/etc/netdata/run-entrypoint.sh"]
+    volumes:
+      # ── Startup script — writes stream.conf with actual API key ──────
+      - ./scripts/netdata-entrypoint.sh:/etc/netdata/run-entrypoint.sh:ro
+      # ── Config files ─────────────────────────────────────────────────
+      - ./monitoring/netdata.conf:/etc/netdata/netdata.conf:ro
+      - ./monitoring/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
+      # ── Persistent metric data ────────────────────────────────────────
+      - ./volumes/netdata/lib:/var/lib/netdata
+      - ./volumes/netdata/cache:/var/cache/netdata
+      # ── Host access for full metrics collection ───────────────────────
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      # ── Docker socket — container names and cgroup metrics ────────────
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
 networks:
   dcm-net:
     driver: bridge
