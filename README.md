@@ -162,13 +162,13 @@ Visual rack diagrams — see exactly what's in every U position.
 
 ```
 ┌─ R-PROD-01 ──────────────────────── 18/42U  ✎ ✕ ─┐
-│ [HYNR-POD-2]  [Zone-8]  [Row Row-15]               │
+│ [HYD-POD]  [Zone-1]  [Row Row-1]               │
 ├────────────────────────────────────────────────────┤
 │ ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 43%          │
 ├───┬─────────────────────────────────┬───┤
 │42 │  —                              │42 │  (empty)
-│36 │  HYNRBBMPRUPIWAF02 / BRR8R24    │36 │  (server)
-│32 │  HYNRBBMPRUPIK8S01 / SN123456   │32 │  (server)
+│36 │  webappserver01 / SN12345       │36 │  (server)
+│32 │  databaseserver01 / SN123456    │32 │  (server)
 └───┴─────────────────────────────────┴───┘
 ```
 
