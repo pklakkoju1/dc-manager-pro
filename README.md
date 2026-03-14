@@ -173,8 +173,8 @@ Visual rack diagrams — see exactly what's in every U position.
 ```
 
 **Colour coding — servers with the same hostname prefix share a colour:**
-- `HYNRBBMPRUPICAS01–10` → one colour (e.g. sky blue)
-- `HYNRBBMPRUPIK8S01–N` → different colour (e.g. emerald)
+- `webappserver01–10` → one colour (e.g. sky blue)
+- `databaseserver01–N` → different colour (e.g. emerald)
 - Switches/Routers/Firewalls → green
 - LIU / Patch Panels → orange
 - PDUs → amber
