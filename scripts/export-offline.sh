@@ -22,6 +22,7 @@ docker save \
   dc-prod_backend \
   dc-prod_frontend \
   postgres:16-alpine \
+  netdata/netdata:stable \
   -o /tmp/dcm-images.tar
 echo "      Images saved: $(du -sh /tmp/dcm-images.tar | cut -f1)"
 
@@ -51,6 +52,9 @@ tar -cf "$BUNDLE" \
     scripts/manual-backup.sh \
     scripts/restore.sh \
     README.md \
+    monitoring/netdata.conf \
+    monitoring/health_alarm_notify.conf \
+    scripts/load-netdata-offline.sh \
   -C /tmp images=dcm-images.tar \
   -C "$(dirname "$DBFILE")" "db=$(basename "$DBFILE")"
 

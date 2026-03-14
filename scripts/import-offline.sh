@@ -40,7 +40,8 @@ fi
 # ── Step 2: Create install directory ──────────────
 echo ""
 echo "[2/5] Setting up directory structure..."
-mkdir -p "$INSTALL_DIR"/{backend,frontend,nginx,scripts,backups/{daily,weekly,manual}}
+mkdir -p "$INSTALL_DIR"/{backend,frontend,nginx,scripts,monitoring,backups/{daily,weekly,manual}}
+mkdir -p "$INSTALL_DIR"/volumes/netdata/{config,lib,cache}
 
 # ── Step 3: Copy project files ────────────────────
 echo ""
@@ -58,6 +59,7 @@ cp "$SCRIPT_DIR/frontend/index.html"         "$INSTALL_DIR/frontend/"
 cp "$SCRIPT_DIR/frontend/Dockerfile"         "$INSTALL_DIR/frontend/"
 cp "$SCRIPT_DIR/nginx/nginx.conf"            "$INSTALL_DIR/nginx/"
 cp "$SCRIPT_DIR/scripts/"*.sh               "$INSTALL_DIR/scripts/"
+[ -d "$SCRIPT_DIR/monitoring" ] && cp "$SCRIPT_DIR/monitoring/"* "$INSTALL_DIR/monitoring/" 2>/dev/null || true
 chmod +x "$INSTALL_DIR/scripts/"*.sh
 [ -f "$SCRIPT_DIR/README.md" ] && cp "$SCRIPT_DIR/README.md" "$INSTALL_DIR/"
 echo "✓ Files copied"
