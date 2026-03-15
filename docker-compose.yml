@@ -167,7 +167,11 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc/os-release:/host/etc/os-release:ro
-      # ── Docker socket — container names and cgroup metrics ────────────
+      # ── cgroups — mount host cgroup fs directly so Netdata can see
+      #    all Docker containers (dcm_postgres, dcm_backend etc.)
+      #    Required for Ubuntu 22.04+ which uses cgroups v2
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      # ── Docker socket — resolves container IDs to names ──────────────
       - /var/run/docker.sock:/var/run/docker.sock:ro
     logging:
       driver: json-file
