@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="7" fill="#0d1117"/>
+  <!-- Rack chassis outline -->
+  <rect x="6" y="5" width="20" height="22" rx="2.5" fill="none" stroke="url(#lg1)" stroke-width="1.5"/>
+  <!-- Rack unit 1 — active server (blue) -->
+  <rect x="8.5" y="7.5" width="15" height="4.5" rx="1" fill="rgba(56,189,248,.13)" stroke="rgba(56,189,248,.5)" stroke-width=".75"/>
+  <rect x="10" y="9" width="6" height="1.5" rx=".75" fill="url(#lg1)" opacity=".7"/>
+  <circle cx="21" cy="9.75" r="1" fill="#38bdf8"/>
+  <circle cx="23" cy="9.75" r="1" fill="#34d399"/>
+  <!-- Rack unit 2 — server (dim) -->
+  <rect x="8.5" y="13.5" width="15" height="4.5" rx="1" fill="rgba(56,189,248,.07)" stroke="rgba(56,189,248,.25)" stroke-width=".75"/>
+  <rect x="10" y="15" width="4" height="1.5" rx=".75" fill="rgba(56,189,248,.4)"/>
+  <circle cx="21" cy="15.75" r="1" fill="rgba(56,189,248,.4)"/>
+  <circle cx="23" cy="15.75" r="1" fill="rgba(56,189,248,.2)"/>
+  <!-- Rack unit 3 — storage (green) -->
+  <rect x="8.5" y="19.5" width="15" height="4.5" rx="1" fill="rgba(52,211,153,.1)" stroke="rgba(52,211,153,.4)" stroke-width=".75"/>
+  <rect x="10" y="21" width="8" height="1.5" rx=".75" fill="url(#lg2)" opacity=".65"/>
+  <circle cx="21" cy="21.75" r="1" fill="#34d399"/>
+  <circle cx="23" cy="21.75" r="1" fill="#34d399"/>
+  <!-- Signal dot — top right of chassis -->
+  <circle cx="25" cy="6" r="1.5" fill="#38bdf8" opacity=".6"/>
+</svg>
