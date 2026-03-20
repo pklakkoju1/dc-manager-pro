@@ -102,18 +102,45 @@ mkdir -p /etc/netdata /var/lib/netdata /var/cache/netdata
 cat > /etc/netdata/netdata.conf << CONF
 # Managed by DC Manager Pro — Netdata child (Docker)
 # Node: $NODE_NAME
+#
+# Child role: collect metrics locally and stream to parent.
+# The parent stores all history and serves the dashboard.
+# This config is intentionally minimal — plugins auto-detect.
 
 [global]
     hostname             = $NODE_NAME
     update every         = 1
-    memory mode          = ram
-    history              = 300
     cloud                = no
     anonymous statistics = no
 
+    # RAM mode — child only needs a small buffer to stream.
+    # The parent (dbengine) stores all long-term history.
+    memory mode          = ram
+    history              = 600    # 10 min buffer if parent temporarily unreachable
+
 [web]
-    # Disable local web UI — all viewing is on the parent
+    # No local dashboard — all viewing is on parent at :19999
     mode = none
+
+[plugins]
+    # Core metrics — always collect on any node
+    proc             = yes   # CPU, RAM, disk I/O, network
+    diskspace        = yes   # disk usage per mount point
+    cgroups          = yes   # Docker container metrics (if Docker is running)
+    apps             = yes   # per-process: CPU/RAM by process name
+    idlejitter       = yes   # CPU scheduling latency
+    tc               = yes   # network traffic shaping
+    go.d             = yes   # modern collectors (postgres, nginx, http checks)
+
+    # Container name resolution — resolves hex IDs to container names
+    # Works when /var/run/docker.sock is mounted (done by docker run command below)
+    cgroup network interfaces = yes
+
+    # Disable — not needed on child nodes
+    python.d         = no    # legacy, go.d covers the same collectors
+    charts.d         = no
+    node.d           = no
+    netdata monitoring = no
 CONF
 
 cat > /etc/netdata/stream.conf << CONF
