@@ -751,6 +751,8 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
     <div class="ni" id="ni-conn" onclick="go('conn')"><span class="ni-i">⇄</span>Connectivity</div>
     <div class="sb-sec">Data</div>
     <div class="ni" id="ni-exp" onclick="go('export')"><span class="ni-i">↓</span>Export / Import</div>
+    <div class="sb-sec">Monitoring</div>
+    <div class="ni" id="ni-monitor" onclick="go('monitor')"><span class="ni-i">📡</span>Netdata</div>
     <div class="sb-sec" id="sb-adm-sec" style="display:none">Admin</div>
     <div class="ni" id="ni-users" onclick="go('users')" style="display:none"><span class="ni-i">👤</span>Users</div>
     <div class="ni" id="ni-fields" onclick="go('fields')" style="display:none"><span class="ni-i">⚙</span>Field Manager</div>
@@ -766,7 +768,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
     <div class="ss"><span class="ss-k">Low Stock</span><span class="ss-v w" id="ss-ls">0</span></div>
     <div class="ss"><span class="ss-k">Connections</span><span class="ss-v" id="ss-co">0</span></div>
   </div>
-  <div class="sb-footer">v3.1.2 &nbsp;·&nbsp; DEVELOPED BY<br/><span>PKLAKKOJU</span></div>
+  <div class="sb-footer">v3.1.5 &nbsp;·&nbsp; DEVELOPED BY<br/><span>PKLAKKOJU</span></div>
 </nav>
 <div id="mn">
   <div class="topbar">
@@ -916,6 +918,41 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
       <div class="sh"><span class="sh-t">Role Permissions Matrix</span></div>
       <div id="perms-view"></div>
     </div>
+    <!-- MONITORING VIEW — Netdata embedded via /monitor/ proxy -->
+    <div class="view" id="view-monitor">
+      <div style="display:flex;flex-direction:column;height:calc(100vh - 56px)">
+        <!-- Toolbar -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0 8px;flex-shrink:0">
+          <span style="font-size:11px;color:var(--dim)">
+            📡 Netdata monitoring dashboard — proxied through
+            <code style="background:var(--s3);padding:2px 6px;border-radius:3px;font-size:10px">/monitor/</code>
+          </span>
+          <div style="flex:1"></div>
+          <button class="btn bs bsm" onclick="reloadMonitor()" title="Reload dashboard">↺ Reload</button>
+          <a href="/monitor/" target="_blank" class="btn bs bsm" title="Open in new tab">↗ New Tab</a>
+        </div>
+        <!-- Iframe — fills remaining height -->
+        <div style="flex:1;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;background:var(--s2)">
+          <iframe id="monitor-frame"
+            src=""
+            style="width:100%;height:100%;border:none;display:block"
+            title="Netdata Monitoring Dashboard"
+            loading="lazy">
+          </iframe>
+          <div id="monitor-placeholder" style="display:flex;flex-direction:column;align-items:center;
+            justify-content:center;height:100%;color:var(--dim);gap:10px">
+            <div style="font-size:36px">📡</div>
+            <div style="font-size:13px;color:var(--hi)">Netdata Monitoring</div>
+            <div style="font-size:11px;text-align:center;max-width:340px;line-height:1.6">
+              Click <b style="color:var(--c1)">Netdata</b> in the sidebar to load the dashboard.
+              <br>Monitoring is proxied through <code style="background:var(--s3);padding:1px 5px;border-radius:3px">/monitor/</code> — no extra ports needed.
+            </div>
+            <button class="btn bp" onclick="loadMonitor()" style="margin-top:8px">Load Dashboard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- AUDIT LOG VIEW (Admin + Superuser) -->
     <div class="view" id="view-audit">
       <div class="sh">
@@ -1489,7 +1526,7 @@ function go(v){
   curV=v;
   const titles={dash:'Dashboard',assets:'Assets',racks:'Rack View',stock:'Stock / Parts',
     conn:'Connectivity',export:'Export & Import',users:'User Management',fields:'Field Manager',
-    perms:'Permissions',audit:'Audit Log'};
+    perms:'Permissions',audit:'Audit Log',monitor:'Monitoring — Netdata'};
   $('ptitle').textContent=titles[v]||v;
   const acts={
     assets:canWrite()?`<button class="btn bp" onclick="openAssetM()">+ Add Asset</button>`:``,
@@ -1503,6 +1540,7 @@ function go(v){
   if(v==='racks') renderRacks();
   if(v==='stock') renderStock();
   if(v==='conn') renderConn();
+  if(v==='monitor') loadMonitor();
   if(v==='users') renderUsers();
   if(v==='fields') renderFields();
   if(v==='perms') renderPerms();
@@ -3484,6 +3522,35 @@ function loadSavedLogo(){
   if(saved) applyCustomLogo(saved);
 }
 loadSavedLogo();
+
+
+// ═══════════════════════════════════════════════════════════════
+// MONITORING — Netdata iframe
+// Proxied via nginx /monitor/ so no extra port needed (air-gap safe)
+// ═══════════════════════════════════════════════════════════════
+
+let _monitorLoaded = false;
+
+function loadMonitor(){
+  const frame = $('monitor-frame');
+  const placeholder = $('monitor-placeholder');
+  if(!frame) return;
+  if(!_monitorLoaded){
+    frame.src = '/monitor/';
+    _monitorLoaded = true;
+  }
+  // Hide placeholder, show iframe
+  if(placeholder) placeholder.style.display = 'none';
+  frame.style.display = 'block';
+}
+
+function reloadMonitor(){
+  const frame = $('monitor-frame');
+  if(!frame) return;
+  _monitorLoaded = false;
+  frame.src = '';
+  setTimeout(loadMonitor, 100);
+}
 
 // ─────────────────────────────────────────────
 // STARTUP — restore session
