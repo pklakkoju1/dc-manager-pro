@@ -1,9 +1,9 @@
-# ⬡ DC Manager Pro — v3.0.3
+# ⬡ DC Manager Pro — v3.1.2
 
 **Production Datacenter Asset Management Platform**  
 Developed by **pklakkoju**
 
-[![version](https://img.shields.io/badge/version-3.0.3-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
+[![version](https://img.shields.io/badge/version-3.1.2-38bdf8?style=flat-square&labelColor=0a0a0f)](.)
 [![python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat-square&logo=python&logoColor=white&labelColor=0a0a0f)](.)
 [![fastapi](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white&labelColor=0a0a0f)](.)
 [![postgres](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white&labelColor=0a0a0f)](.)
@@ -621,19 +621,21 @@ dc-prod/
 │   ├── netdata-child.conf            ← Reference config for manual child installs
 │   └── health_alarm_notify.conf      ← Alert notification settings (email/Slack)
 ├── scripts/
-│   ├── generate-certs.sh             ← Generate self-signed SSL certificate
-│   ├── entrypoint-backup.sh          ← Backup container cron entrypoint
-│   ├── manual-backup.sh              ← Trigger a manual database backup
-│   ├── restore.sh                    ← Restore database from backup file
-│   ├── export-offline.sh             ← Bundle app + images for air-gapped server
-│   ├── import-offline.sh             ← Install bundle on air-gapped server
-│   ├── migrate-volumes.sh            ← Migrate from named to local volumes
-│   ├── migrate-server-types.sql      ← DB migration: add new server_type options
-│   ├── migrate-add-zone.sql          ← DB migration: add zone column to racks
-│   ├── save-netdata-offline.sh       ← Save parent Netdata image for air-gapped VM
-│   ├── load-netdata-offline.sh       ← Load parent Netdata image on air-gapped VM
-│   ├── save-netdata-child-offline.sh ← Package Netdata for air-gapped child nodes
-│   ├── install-netdata-child-systemd.sh ← Install Netdata child as systemd service
+│   ├── generate-certs.sh                ← Generate self-signed SSL certificate
+│   ├── entrypoint-backup.sh             ← Backup container cron entrypoint
+│   ├── manual-backup.sh                 ← Trigger a manual database backup
+│   ├── restore.sh                       ← Restore database from backup file
+│   ├── export-offline.sh                ← Bundle app + images for air-gapped server
+│   ├── import-offline.sh                ← Install bundle on air-gapped server
+│   ├── netdata-entrypoint.sh            ← Writes stream.conf with real API key at startup
+│   ├── migrate-volumes.sh               ← DB migration: named → local volumes
+│   ├── migrate-server-types.sql         ← DB migration: add new server_type options
+│   ├── migrate-add-zone.sql             ← DB migration: add zone column to racks
+│   ├── migrate-audit-v2.sql             ← DB migration: stock + connectivity audit trail
+│   ├── save-netdata-offline.sh          ← Save parent Netdata image for air-gapped VM
+│   ├── load-netdata-offline.sh          ← Load parent Netdata image on air-gapped VM
+│   ├── save-netdata-child-offline.sh    ← Package Netdata for air-gapped child nodes
+│   ├── install-netdata-child-systemd.sh ← Install Netdata child as native systemd service
 │   └── install-netdata-child-docker.sh  ← Install Netdata child as Docker container
 ├── volumes/                          ← ALL persistent data — back this up!
 │   ├── postgres/                     ← PostgreSQL data files
@@ -657,15 +659,19 @@ dc-prod/
 | Action | Superuser | Admin | User |
 |--------|-----------|-------|------|
 | View Assets / Racks / Stock | ✓ | ✓ | ✓ |
+| View Audit Log & History | ✓ | ✓ | ✗ |
+| View Stock History | ✓ | ✓ | ✓ |
 | Add / Edit / Delete Assets | ✓ | ✓ | ✗ |
 | Add / Edit Racks | ✓ | ✓ | ✗ |
 | Delete Racks | ✓ | ✗ | ✗ |
-| Add / Edit Stock & Transactions | ✓ | ✓ | ✗ |
+| Stock Transactions (Txn button) | ✓ | ✓ | ✗ |
+| Allocate Parts to Assets | ✓ | ✓ | ✗ |
 | Add / Edit Connectivity | ✓ | ✓ | ✗ |
 | Export to Excel | ✓ | ✓ | ✓ |
 | Import from Excel | ✓ | ✓ | ✗ |
 | User Management | ✓ | ✗ | ✗ |
 | Field Manager (add/edit fields) | ✓ | ✗ | ✗ |
+| Logo Settings (upload/remove) | ✓ | ✗ | ✗ |
 
 ---
 
@@ -702,7 +708,7 @@ Home screen — datacenter health at a glance.
 | Stock SKUs | Stock / Parts |
 | Low Stock | Stock / Parts (items ≤ 5 units) |
 
-Below the cards: **Assets by Type** bar chart, **Stock Summary** with fill bars, and **Recent Assets** showing the last 8 modified items.
+Below the cards: **Assets by Type** bar chart, **Stock Summary** with fill bars, **Recent Assets** (last 8 modified), and **Recent Activity** (last 8 changes across all assets — visible to Admin/Superuser).
 
 ---
 
@@ -736,7 +742,10 @@ All IP fields are **clickable links** — clicking opens `https://ip` in a new t
 
 **Asset detail panel** — click any hostname to open:
 - **Info tab** — all fields in a clean read view, IP links clickable
-- **History tab** — full audit trail with timestamps, changed fields, and who made each change
+- **History tab** — unified timeline showing ALL changes to this asset in one place:
+  - Asset changes (rack moves, status changes, field updates) in **blue/yellow/purple**
+  - Parts allocated or returned (e.g. "2x Seagate HDD allocated") in **purple** tagged `PARTS`
+  - Connectivity changes (cable added, switch port changed) in **orange** tagged `CABLING`
 - **Topology tab** — draggable SVG network diagram showing the full cable path from this asset to its switch
 
 ---
@@ -748,12 +757,11 @@ Visual diagrams of every rack in your datacenters.
 **Reading a rack card:**
 ```
 R-PROD-01                              ✎  ✕
-[HYD-POD]  [Zone-1]  [Row-1]
-
+[PROD-POD-2]  [Zone-1]  [Row-10]
 ████████████░░░░░░░░░░░░░░  43%
 ───────────────────────────────────────
-42 │  WEBAPPSERVER01 / SN12345678  │ 42
-36 │  PSQLDBSERVER01 / SN12345687  │ 36
+42 │  APPWEBSERVER01 / BRR8R24     │ 42
+36 │  DATABASESERVER01 / SN123456  │ 36
 32 │  —                            │ 32  (empty)
 ```
 
@@ -778,18 +786,29 @@ Click any asset slot to open its detail panel.
 
 ### ◫ Stock / Parts
 
-Spare parts inventory with transaction tracking.
+Spare parts inventory with full transaction tracking and asset allocation tracing.
 
 **Per item fields:** Category, Brand, Model, Spec, Form factor, Interface, Total / Available / Allocated quantity, Location, Unit cost
 
-**Transactions** — click + or − on any item to record a movement:
-- **IN** — receiving new stock
-- **OUT** — consuming stock
-- **ALLOCATE** — reserve for a job
-- **RETURN** — return allocated stock
-- **ADJUST** — manual correction
+**Transactions** — click **Txn** on any row to open the transaction dialog:
 
-Every transaction is logged with quantity, type, and timestamp. Items with ≤ 5 available units are flagged as **Low Stock** in the sidebar and dashboard.
+| Type | What happens | Asset link |
+|------|-------------|------------|
+| **IN** | Increase total + available | — |
+| **OUT** | Decrease total + available (consume/discard) | — |
+| **ALLOCATE** | Reserve quantity for a specific asset | **Required** — type asset hostname |
+| **RETURN** | Return allocated quantity back to available | Optional — asset hostname |
+| **ADJUST** | Set absolute quantity (stock count correction) | — |
+
+When you select **ALLOCATE** or **RETURN**, an **Asset Hostname** field appears with autocomplete from all known assets. This links the transaction to the asset — the parts movement appears in that asset's History tab automatically.
+
+**History button** — every stock row has a **History** button (visible to all roles). Opens a popup showing:
+- All transactions (IN/OUT/ALLOCATE/RETURN/ADJUST) with quantities and timestamps
+- Which assets parts were allocated to
+- Create/edit/delete events from the audit log
+- Summary: total transactions and all assets that received parts from this item
+
+Items with ≤ 5 available units are flagged as **Low Stock** in the sidebar and dashboard.
 
 ---
 
@@ -816,23 +835,47 @@ Server (hostname / port)
 
 **Topology diagram** — open any asset → Topology tab to see a draggable visual map of its full cable path.
 
+**Connectivity audit trail** — every connectivity change is automatically logged:
+- **Link Added** — full path recorded (server → LIU → switch, cable type, speed)
+- **Link Changed** — specific changes detected (switch hostname, port number, speed, VLAN, LIU)
+- **Link Removed** — full path of the removed connection recorded
+
+These events appear in the **global Audit Log** (filter by Entity: Connectivity) and in the **asset History tab** of the server involved.
+
 ---
 
 ### ↓ Export / Import
 
 **Export** (top-right button on Assets/Stock/Connectivity pages):
-Downloads a full `.xlsx` workbook with sheets: Assets, Racks, Stock, Connectivity — all fields included, including `rack_zone` and `rack_row`.
+Downloads a full `.xlsx` workbook with sheets: Assets, Racks, Stock, Connectivity — all fields included, including `rack_zone`, `rack_row`, and `alloc_qty`.
 
 **Export Rack View** (toolbar button on Rack View page):
 Downloads `.xlsx` with Rack Assets + Full U Layout sheets. Respects active DC/Zone/Row filters.
 
 **Import** (top-right button → choose file):
-Upload a filled `.xlsx` and select sheet type. Rules:
-- Row 1 must be the header row — do not modify headers
-- IDs are auto-generated — leave the ID column blank
-- Duplicate hostnames on import → existing record is updated
-- Slot conflicts → row skipped, counted in result summary
+Upload a filled `.xlsx` and select sheet type.
+
+Import result shows three counters:
+```
+✓ 47 imported    ⊘ 3 skipped (already exist)    ✕ 1 error (slot conflict / bad data)
+```
+
+Rules per sheet:
+
+| Sheet | Skip condition | Duplicate check |
+|-------|---------------|-----------------|
+| **Assets** | Hostname already exists → skipped (not overwritten) | `hostname` |
+| **Stock** | Same brand + model already exists → skipped | `brand + model` |
+| **Connectivity** | Same server + port label already exists → skipped | `src_hostname + src_port_label` |
+| **Racks** | Always upsert — safe to re-import | `rack_id` (ON CONFLICT UPDATE) |
+
+Additional rules:
+- Row 1 must be the header row — do not modify column names
+- IDs are auto-generated — leave any `id` column blank
+- Asset slot conflicts → row counted as error (hard fail, no overwrite)
 - `rack_zone` / `rack_row` values auto-create rack records if they don't exist
+- All imported records are written to the audit log with the importing user's name
+- A server can have **multiple connectivity rows** — each is identified by its unique `src_port_label` (e.g. `slot1port1`, `slot2port1`)
 
 **Templates** — download blank template workbooks from the Import dialog.
 
@@ -868,6 +911,55 @@ Navigate to **Admin → Users**:
 
 ---
 
+### 📋 Audit Log *(Admin + Superuser)*
+
+Navigate via **Audit Log** in the sidebar (Admin section).
+
+The filter bar has five controls — all clearly readable:
+- **Search** — free-text search across detail and entity ID
+- **Action** — grouped dropdown: Asset / Stock-Parts / Connectivity / Rack
+- **Entity Type** — filter by what changed (Asset, Stock, Connectivity, Rack)
+- **User** — filter by who made the change
+- **Since Date** — show only changes from a specific date onwards
+- **Clear Filters** button resets all filters at once
+
+Active filters are shown as readable chips below the bar (e.g. `action: Asset Created`).
+
+Click **↓ Export CSV** to download all matching records as a spreadsheet.
+
+---
+
+### ⚡ Recent Activity *(Admin + Superuser)*
+
+Two ways to reach recent activity quickly:
+
+1. **Dashboard** — the **Recent Activity** card (bottom-right) shows the last 8 changes. Click **📋 View All →** in the card header to open the full Audit Log.
+2. **Sidebar** — click **⚡ Recent Activity** in the Admin section to jump to the Dashboard and scroll to the activity card instantly.
+
+---
+
+### 🖼 Logo Settings *(Superuser only)*
+
+Navigate to **Admin → Logo Settings** in the sidebar.
+
+Upload a custom logo to replace the default server rack icon across the entire application:
+
+| Location | What changes |
+|----------|-------------|
+| Browser tab | Favicon updates immediately |
+| Sidebar top-left | Custom image replaces default rack SVG |
+| Login page | Custom image replaces the large rack logo |
+
+**Upload:** Click the dashed upload zone → pick a file (PNG, JPG, SVG, WebP, max 1 MB). The logo updates instantly everywhere.
+
+**Remove:** Click **✕ Remove Custom Logo** to restore the default rack SVG across all locations.
+
+The logo is stored in the browser's `localStorage` — it persists across sessions without any database or backend change. Each machine/browser needs the logo set once by a Superuser.
+
+> **Note:** Admin and Viewer roles cannot see or access Logo Settings. The sidebar item is hidden for non-Superuser roles.
+
+---
+
 ### ◑ Light / Dark Mode
 
 Click the **◑** button in the sidebar footer to toggle between:
@@ -885,9 +977,9 @@ Preference is saved in the browser and persists across sessions.
 - **General fields:** Hostname, Type, Status, Datacenter, Rack ID, U Position, Asset Tag, Serial Number, PO Number, EOL Date, App/Asset Owner, Notes
 - **Network fields:** Prov IP, BMC IP (clickable → opens https://ip), Data IP, Backup IP, MAC, VLAN, Additional IPs
 - **Hardware fields:** Fully configurable via Field Manager
-- **Asset History:** Full audit trail — creation, status changes, rack moves, hardware changes
+- **Unified History tab:** Single timeline showing asset changes + parts movements + connectivity changes — all in one view
 - **Slot conflict protection:** Warns on save if U position occupied; hard-fails on import
-- **Topology tab:** Draggable SVG diagram showing full cable path
+- **Topology tab:** Draggable SVG diagram showing full cable path to switch
 - Export/Import via Excel
 
 ### Asset Table
@@ -918,23 +1010,53 @@ Type-A through Type-F, Type-S, Type-T, Type-X through Type-Z, Other (free-text)
 
 ### Stock Management
 - SKU tracking with full hardware spec fields
-- Transactions: IN / OUT / ALLOCATE / RETURN / ADJUST with history
+- Transactions: IN / OUT / ALLOCATE / RETURN / ADJUST
+- **ALLOCATE links parts to an asset hostname** — the allocation appears in that asset's History tab
+- **History button** on every stock row — shows all transactions + which assets received parts
+- All transactions logged to audit trail with user, timestamp, before/after quantities
 - Low stock alert (≤ 5 units)
 
 ### Connectivity
 - Full path: Server → LIU-A → LIU-B → Switch with cable/speed/VLAN/purpose
 - Resizable columns, sort, filter by cable type and speed, bulk delete
+- Every change logged to audit trail — switch moves, port changes, speed changes all detected
 
-### Asset History / Audit Log
-| Event | Colour |
-|-------|--------|
-| ASSET_CREATED | Green |
-| ASSET_RELOCATED | Yellow |
-| ASSET_STATUS_CHANGE | Purple |
-| ASSET_UPDATED | Blue |
-| ASSET_DELETED | Red |
+### Unified History & Audit Trail
 
-Each entry records: changed fields, old → new values, user, timestamp.
+**Per-Asset History tab** shows a single colour-coded timeline:
+
+| Event type | Colour | Tag | Examples |
+|-----------|--------|-----|---------|
+| Asset created/updated/relocated | Green/Blue/Yellow | — | Rack move, status change, field edit |
+| Part allocated to this asset | Purple | `PARTS` | "Allocated 2x Seagate 4TB → prod-server-01" |
+| Part returned from this asset | Amber | `PARTS` | "Returned 1x Kingston 32GB RAM" |
+| Connectivity link added | Orange | `CABLING` | "Connected eth0 → SW-CORE-01 Gi1/0/1" |
+| Connectivity link changed | Orange | `CABLING` | "Switch: SW-01 → SW-04 \| Port: Gi1/0/1 → Gi1/0/5" |
+| Connectivity link removed | Red | `CABLING` | "Removed: prod-server-01 → SW-CORE-01" |
+
+**Global Audit Log** (Admin + Superuser) — navigate via **Audit Log** in the sidebar, or the **📋 View All →** button on the Dashboard Recent Activity card:
+- Filter bar with properly sized controls — all filters clearly visible and readable
+- **Action** filter — grouped by category: Asset / Stock-Parts / Connectivity / Rack
+- **Entity Type** filter — Asset, Stock/Parts, Connectivity, Rack
+- **User** filter — filter by who made the change
+- **Since Date** filter — show changes from a specific date
+- **Search** — searches detail text and entity IDs
+- Active filters shown as readable chips (e.g. `action: Asset Created`, not raw `ASSET_CREATED`)
+- Export to CSV (respects all active filters)
+- Paginated: 25 / 50 / 100 / 200 per page
+
+**Stock History modal** (all roles) — click **History** on any stock row:
+- All transactions in reverse chronological order
+- Which assets parts were allocated to
+- Summary of all assets that received parts from this item
+
+### API — New Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/assets/{id}/full-history` | GET | Unified timeline: asset + parts + connectivity events |
+| `/api/stock/{id}/history` | GET | Stock audit log + transaction records merged |
+| `/api/connectivity/{id}/history` | GET | Change log for one connectivity record |
 
 ### Session Security
 - Auto-logout after 10 minutes of inactivity
@@ -945,7 +1067,21 @@ Each entry records: changed fields, old → new values, user, timestamp.
 - Glassmorphism dark mode (default) — frosted glass panels, zinc/slate palette
 - Light mode — cool slate-blue tinted theme
 - Clickable KPI dashboard cards
+- **Recent Activity widget** on Dashboard (Admin/Superuser) — last 8 changes, **📋 View All →** button in card header
+- **Sidebar quick links** for Admin/Superuser: 📋 Audit Log · ⚡ Recent Activity (scrolls to dashboard widget)
 - Toast notifications, modal forms, column chooser
+- All filter controls use consistent 36px height with 12px font — fully readable in dark theme
+
+### Logo & Branding
+- Server rack SVG logo embedded as browser tab favicon — works air-gapped, no external files
+- Logo in sidebar top-left — click to go to Dashboard
+- **Logo Settings** (Superuser only) — available in Admin sidebar section
+  - Upload custom logo (PNG, JPG, SVG, WebP — max 1 MB)
+  - Preview current logo before applying
+  - Remove custom logo and restore default with one click
+  - Custom logo appears in: browser tab favicon, sidebar, login page
+  - Stored in browser localStorage — persists across sessions without any backend change
+  - Three-layer guard: only Superuser can open settings, upload, or remove
 
 ---
 
@@ -1063,16 +1199,36 @@ docker logs dcm_netdata 2>&1 | grep -i "connected\|streaming\|child-name"
 
 ## Database Migrations (Existing Installs)
 
-Run these when upgrading an existing install — all scripts are safe to run multiple times:
+Run these when upgrading an existing install — all scripts are safe to run on live data, no data is lost.
+
+### Latest — v3.1.0 (audit trail for stock & connectivity)
+
+**Run this if upgrading from any version before v3.1.0:**
 
 ```bash
-# Docker installs
-docker cp scripts/migrate-add-zone.sql    dcm_postgres:/tmp/
+# Docker:
+docker cp scripts/migrate-audit-v2.sql dcm_postgres:/tmp/
+docker exec dcm_postgres psql -U dcuser -d dcmanager -f /tmp/migrate-audit-v2.sql
+
+# Bare metal:
+PGPASSWORD=YourPassword psql -U dcuser -d dcmanager -f scripts/migrate-audit-v2.sql
+```
+
+Adds:
+- `audit_log.related_entity` and `related_entity_id` — links stock/connectivity events to assets
+- `stock_transactions.allocated_to` — records which asset a part was allocated to
+- `stock_transactions.username` — records who made the transaction
+
+### Previous migrations
+
+```bash
+# Docker:
+docker cp scripts/migrate-add-zone.sql     dcm_postgres:/tmp/
 docker cp scripts/migrate-server-types.sql dcm_postgres:/tmp/
 docker exec dcm_postgres psql -U dcuser -d dcmanager -f /tmp/migrate-add-zone.sql
 docker exec dcm_postgres psql -U dcuser -d dcmanager -f /tmp/migrate-server-types.sql
 
-# Bare metal installs
+# Bare metal:
 PGPASSWORD=YourPassword psql -U dcuser -d dcmanager -f scripts/migrate-add-zone.sql
 PGPASSWORD=YourPassword psql -U dcuser -d dcmanager -f scripts/migrate-server-types.sql
 ```
@@ -1137,7 +1293,10 @@ Interactive docs: `https://your-server/api/docs`
 | `/api/stats` | GET | Any | Dashboard stats |
 | `/api/assets` | GET/POST | Any/Write | List/create assets |
 | `/api/assets/{id}` | GET/PUT/DELETE | Any/Write | Asset CRUD |
-| `/api/assets/{id}/history` | GET | Any | Asset audit trail |
+| `/api/assets/{id}/history` | GET | Any | Asset audit trail (asset events only) |
+| `/api/assets/{id}/full-history` | GET | Any | Unified timeline: asset + parts + connectivity |
+| `/api/stock/{id}/history` | GET | Any | Stock audit log + all transaction records |
+| `/api/connectivity/{id}/history` | GET | Any | Change log for one connectivity record |
 | `/api/assets/check-slot` | GET | Any | Check rack+U occupancy |
 | `/api/racks` | GET/POST | Any/Write | List/create racks |
 | `/api/racks/{id}` | PUT | Write | Edit rack |
@@ -1495,7 +1654,55 @@ sudo bash /opt/install-netdata-child-docker.sh   --parent 192.168.86.130 --apike
 
 ## Changelog
 
-### v3.0.3 (2026-03-15)
+### v3.1.2 (2026-03-20)
+- New: **Logo Settings** (Superuser only) — Admin sidebar item to upload/preview/remove custom logo
+- New: Custom logo applies to browser tab favicon, sidebar, and login page simultaneously
+- New: Logo stored in `localStorage` — persists across sessions without backend changes
+- New: **Remove** button in Logo Settings modal to restore default rack SVG in one click
+- Changed: Sidebar logo click now navigates to Dashboard (was: triggered upload)
+- Changed: Logo upload/remove restricted to Superuser role — three-layer guard on all functions
+- Fixed: Audit log filter controls — `height:28px` replaced with `height:36px`, selects now use `fi_s` class for consistent dark theme styling
+- Fixed: Action/Entity filter chips showed raw values (`ASSET_CREATED`) — now show readable labels (`Asset Created`)
+- Fixed: Entity column in audit table — now colour-coded readable labels (Asset/Stock/Cable/Rack) instead of raw strings
+- Fixed: Connectivity import skipped second connection for same server — duplicate check now uses `src_port_label` not `src_port`
+
+### v3.1.1 (2026-03-19)
+- Fixed: Audit log filter controls clipped text — `height:28px` replaced with `height:36px`, `font-size:10px` → `12px`, `color:var(--hi)` ensures bright readable text in all fields
+- Fixed: Action and Entity dropdowns now use `fi_s` class — consistent dark background, proper border, focus ring
+- Fixed: Filter chip showed raw action value (`ASSET_CREATED`) — now shows human-readable label (`Asset Created`)
+- Fixed: Entity column in audit table showed raw string (`asset`) — now colour-coded: Asset (blue), Stock (violet), Connectivity (orange), Rack (amber)
+- Fixed: Connectivity import skipped second row for same server — duplicate check now uses `src_port_label` (unique per physical link) instead of `src_port` (can repeat across slots)
+- Fixed: Import had no audit trail — all imported records now written to audit log with importing user's name
+- Fixed: Stock import created duplicates on re-import — now skips if same `brand + model` already exists
+- Fixed: Asset import counted existing records as silent drops — now counted and displayed as `⊘ N skipped (already exist)`
+- Fixed: Import result only showed imported/errors — now shows all three: imported, skipped, errors
+- Fixed: Stock template missing `alloc_qty` column — added so export/re-import round-trips correctly
+- New: **📋 View All →** button in Recent Activity card header — always visible, navigates to Audit Log
+- New: **⚡ Recent Activity** sidebar quick link — goes to Dashboard and scrolls to activity widget
+- New: Audit Log and Recent Activity sidebar items now visible to Admin role (were Superuser-only)
+
+### v3.1.0 (2026-03-19)
+- New: **Unified Asset History tab** — one timeline showing asset changes, parts movements, and connectivity changes together
+- New: **Stock → Asset allocation tracking** — ALLOCATE/RETURN transactions now link to an asset hostname; the movement appears automatically in that asset's History tab
+- New: **Stock History modal** — History button on every stock row shows all transactions, who did them, and which assets received parts
+- New: **Connectivity audit trail** — every link add/change/delete now logged with specific field-level changes (switch, port, speed, VLAN)
+- New: `GET /api/assets/{id}/full-history` — backend endpoint returning merged timeline of all entity types
+- New: `GET /api/stock/{id}/history` — stock audit + transaction records merged and sorted
+- New: `GET /api/connectivity/{id}/history` — change log for a connectivity record
+- New: `scripts/migrate-audit-v2.sql` — DB migration adding `related_entity` to audit_log and `allocated_to` + `username` to stock_transactions
+- New: Global Audit Log now covers stock and connectivity — action filter has grouped optgroups, entity filter includes Stock and Connectivity
+- New: Dashboard **Recent Activity** widget — shows last 8 changes across all entities (Admin/Superuser)
+- New: Transaction modal defaults to ALLOCATE; Asset Hostname field with autocomplete appears for ALLOCATE/RETURN types only
+- Fixed: Export 500 error — `cv()` function now correctly handles PostgreSQL `Decimal`, timezone-aware `datetime`, and all asyncpg types
+- Fixed: Audit log page was broken — `renderAuditLog`, `exportAuditLog`, `clearAuditFilters`, `debounceAudit` were called but never defined; all now implemented
+- Fixed: cdnjs xlsx library removed from `<head>` — no longer blocks page load on restricted networks; template download lazy-loads it only when needed
+- Fixed: Netdata `stream.conf` env var substitution — `netdata-entrypoint.sh` writes the real UUID before Netdata starts (Netdata does not expand `${VAR}` in config files)
+- Fixed: Netdata 403 on child nodes — parent `stream.conf` structure corrected (`[UUID]` section header, not `api key =` inside `[stream]`)
+- Fixed: Netdata container cgroup visibility — added `/sys/fs/cgroup:/sys/fs/cgroup:ro` mount for Ubuntu 22.04+ cgroups v2
+- Fixed: Docker child agent `(unhealthy)` status — added `--no-healthcheck` to `install-netdata-child-docker.sh` (web mode=none so health check always failed)
+- Fixed: `save-netdata-child-offline.sh` — SCRIPT_DIR resolved before any `cd`, `curl -fsSL`, size validation on downloaded file
+
+### v3.0.1 (2026-03-14)
 - New: Netdata monitoring — parent-child streaming, all nodes in one dashboard at :19999
 - New: Multi-node support — enroll bare metal hosts, VMs, any Linux server as child nodes
 - New: Air-gapped workflow — `save-netdata-offline.sh` (parent) + `save-netdata-child-offline.sh` (children)

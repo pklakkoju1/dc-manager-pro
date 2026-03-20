@@ -81,15 +81,18 @@ CREATE INDEX IF NOT EXISTS idx_stock_cat ON stock(category);
 
 -- ── Stock Transactions ─────────────────────────────
 CREATE TABLE IF NOT EXISTS stock_transactions (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    stock_id    UUID NOT NULL REFERENCES stock(id) ON DELETE CASCADE,
-    tx_type     TEXT NOT NULL CHECK (tx_type IN ('IN','OUT','ALLOCATE','RETURN','ADJUST')),
-    qty         INT NOT NULL,
-    reference   TEXT,
-    notes       TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    stock_id     UUID NOT NULL REFERENCES stock(id) ON DELETE CASCADE,
+    tx_type      TEXT NOT NULL CHECK (tx_type IN ('IN','OUT','ALLOCATE','RETURN','ADJUST')),
+    qty          INT NOT NULL,
+    reference    TEXT,
+    notes        TEXT,
+    allocated_to TEXT,         -- asset hostname this part was allocated/returned to
+    username     TEXT,         -- who performed the transaction
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_stx_stock ON stock_transactions(stock_id);
+CREATE INDEX IF NOT EXISTS idx_stx_stock     ON stock_transactions(stock_id);
+CREATE INDEX IF NOT EXISTS idx_stx_allocated ON stock_transactions(allocated_to);
 
 -- ── Connectivity ───────────────────────────────────
 CREATE TABLE IF NOT EXISTS connectivity (
@@ -133,18 +136,21 @@ CREATE TABLE IF NOT EXISTS hw_fields (
 
 -- ── Audit Log ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS audit_log (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     UUID,
-    username    TEXT,
-    action      TEXT NOT NULL,
-    entity      TEXT,
-    entity_id   TEXT,
-    detail      TEXT,
-    ip_addr     TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id             UUID,
+    username            TEXT,
+    action              TEXT NOT NULL,
+    entity              TEXT,
+    entity_id           TEXT,
+    detail              TEXT,
+    related_entity      TEXT,   -- e.g. 'asset' when a stock tx links to an asset
+    related_entity_id   TEXT,   -- e.g. asset hostname for stock→asset tracing
+    ip_addr             TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user    ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_entity  ON audit_log(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_related ON audit_log(related_entity, related_entity_id);
 
 -- ══════════════════════════════════════════════════
 -- SYSTEM HARDWARE FIELDS (always seeded — not demo data)

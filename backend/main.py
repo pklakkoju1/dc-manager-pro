@@ -196,11 +196,12 @@ class StockCreate(BaseModel):
     notes: Optional[str] = None
 
 class StockTransaction(BaseModel):
-    stock_id: str
-    tx_type: str
-    qty: int
-    ref: Optional[str] = None
-    notes: Optional[str] = None
+    stock_id:     str
+    tx_type:      str
+    qty:          int
+    ref:          Optional[str] = None
+    notes:        Optional[str] = None
+    allocated_to: Optional[str] = None   # asset hostname — for ALLOCATE/RETURN tracking
 
 class ConnCreate(BaseModel):
     src_host: Optional[str] = None
@@ -247,13 +248,18 @@ def _out(r):
     return d
 
 
-async def log_audit(conn, user: dict, action: str, entity: str, entity_id: str, detail: str = None):
-    """Write an audit log entry"""
+async def log_audit(conn, user: dict, action: str, entity: str, entity_id: str,
+                    detail: str = None, related_entity: str = None, related_entity_id: str = None):
+    """Write an audit log entry.
+    related_entity / related_entity_id link this entry to a secondary entity,
+    e.g. a stock transaction linked to the asset it was allocated to."""
     try:
         await conn.execute(
-            """INSERT INTO audit_log (user_id, username, action, entity, entity_id, detail)
-               VALUES ($1, $2, $3, $4, $5, $6)""",
-            user.get("id"), user.get("username"), action, entity, str(entity_id), detail
+            """INSERT INTO audit_log
+               (user_id, username, action, entity, entity_id, detail, related_entity, related_entity_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+            user.get("id"), user.get("username"), action, entity, str(entity_id),
+            detail, related_entity, related_entity_id
         )
     except Exception as e:
         import logging
@@ -416,17 +422,147 @@ async def asset_history(aid:str, conn=Depends(db), _=Depends(get_current_user)):
            ORDER BY created_at DESC LIMIT 200""", aid)
     return [_out(r) for r in rows]
 
-@app.get("/api/audit")
-async def audit_log_list(entity:Optional[str]=None, limit:int=100,
-                          conn=Depends(db), _=Depends(require_superuser)):
-    if entity:
-        rows = await conn.fetch(
-            "SELECT * FROM audit_log WHERE entity=$1 ORDER BY created_at DESC LIMIT $2",
-            entity, limit)
-    else:
-        rows = await conn.fetch(
-            "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1", limit)
+@app.get("/api/assets/{aid}/full-history")
+async def asset_full_history(aid:str, conn=Depends(db), _=Depends(get_current_user)):
+    """Return a unified timeline for an asset:
+    - All direct asset audit events (rack moves, status changes, etc.)
+    - All stock transactions allocated to this asset (parts usage)
+    - All connectivity events where this asset is src or dst
+    Sorted newest-first."""
+    asset = await conn.fetchrow("SELECT hostname FROM assets WHERE id=$1", aid)
+    if not asset:
+        raise HTTPException(404, "Asset not found")
+    hostname = asset["hostname"]
+
+    # 1. Direct asset audit entries
+    asset_rows = await conn.fetch(
+        """SELECT *, 'asset_event' AS source_type
+           FROM audit_log
+           WHERE entity='asset' AND entity_id=$1
+           ORDER BY created_at DESC LIMIT 300""", aid)
+
+    # 2. Stock/connectivity events linked to this asset via related_entity_id
+    linked_rows = await conn.fetch(
+        """SELECT *, 'linked_event' AS source_type
+           FROM audit_log
+           WHERE related_entity='asset' AND related_entity_id=$1
+             AND entity!='asset'
+           ORDER BY created_at DESC LIMIT 200""", hostname)
+
+    # 3. Connectivity events where src or dst hostname matches
+    conn_rows = await conn.fetch(
+        """SELECT *, 'conn_event' AS source_type
+           FROM audit_log
+           WHERE entity='connectivity'
+             AND (related_entity='asset' AND related_entity_id=$1)
+           ORDER BY created_at DESC LIMIT 100""", hostname)
+
+    # Merge and sort all rows by created_at descending
+    all_rows = list(asset_rows) + list(linked_rows)
+    # Deduplicate by id
+    seen = set()
+    deduped = []
+    for r in all_rows:
+        rid = str(r["id"])
+        if rid not in seen:
+            seen.add(rid)
+            deduped.append(_out(r))
+    deduped.sort(key=lambda x: x.get("created_at",""), reverse=True)
+    return deduped[:300]
+
+@app.get("/api/stock/{sid}/history")
+async def stock_history(sid:str, conn=Depends(db), _=Depends(get_current_user)):
+    """Return full audit history for a stock item — includes all transactions
+    and any create/update/delete audit entries."""
+    # Audit entries
+    audit_rows = await conn.fetch(
+        """SELECT *, 'audit' AS source_type FROM audit_log
+           WHERE entity='stock' AND entity_id=$1
+           ORDER BY created_at DESC LIMIT 200""", sid)
+    # Transaction records with richer detail
+    tx_rows = await conn.fetch(
+        """SELECT *, 'transaction' AS source_type FROM stock_transactions
+           WHERE stock_id=$1 ORDER BY created_at DESC LIMIT 200""", sid)
+
+    # Merge, deduplicate, sort
+    result = []
+    seen_ids = set()
+    for r in audit_rows:
+        rid = str(r["id"])
+        if rid not in seen_ids:
+            seen_ids.add(rid)
+            d = _out(r)
+            d["source_type"] = "audit"
+            result.append(d)
+    for r in tx_rows:
+        d = _out(r)
+        d["source_type"] = "transaction"
+        result.append(d)
+    result.sort(key=lambda x: x.get("created_at",""), reverse=True)
+    return result[:300]
+
+@app.get("/api/connectivity/{cid}/history")
+async def conn_history(cid:str, conn=Depends(db), _=Depends(get_current_user)):
+    """Return audit history for a specific connectivity record."""
+    rows = await conn.fetch(
+        """SELECT * FROM audit_log
+           WHERE entity='connectivity' AND entity_id=$1
+           ORDER BY created_at DESC LIMIT 100""", cid)
     return [_out(r) for r in rows]
+
+@app.get("/api/audit")
+async def audit_log_list(
+    entity:   Optional[str] = None,
+    action:   Optional[str] = None,
+    username: Optional[str] = None,
+    q:        Optional[str] = None,
+    since:    Optional[str] = None,   # ISO date string e.g. 2026-03-01
+    limit:    int = 200,
+    offset:   int = 0,
+    conn=Depends(db), user=Depends(get_current_user)
+):
+    # Both admin and superuser can see the audit log
+    if user["role"] not in ("admin", "superuser"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    where, params = [], []
+
+    if entity:
+        params.append(entity)
+        where.append(f"entity=${len(params)}")
+    if action:
+        params.append(action)
+        where.append(f"action=${len(params)}")
+    if username:
+        params.append(f"%{username}%")
+        where.append(f"username ILIKE ${len(params)}")
+    if q:
+        params.append(f"%{q}%")
+        where.append(f"(detail ILIKE ${len(params)} OR entity_id ILIKE ${len(params)} OR related_entity_id ILIKE ${len(params)})")
+    if since:
+        params.append(since)
+        where.append(f"created_at >= ${len(params)}::timestamptz")
+
+    w_sql = (" WHERE " + " AND ".join(where)) if where else ""
+
+    # Total count for pagination
+    count_sql = f"SELECT COUNT(*) FROM audit_log{w_sql}"
+    total = await conn.fetchval(count_sql, *params)
+
+    # Data
+    params.append(limit)
+    params.append(offset)
+    rows = await conn.fetch(
+        f"SELECT * FROM audit_log{w_sql} ORDER BY created_at DESC "
+        f"LIMIT ${len(params)-1} OFFSET ${len(params)}",
+        *params
+    )
+    return {
+        "total":  total,
+        "limit":  limit,
+        "offset": offset,
+        "items":  [_out(r) for r in rows]
+    }
 
 @app.delete("/api/assets/{aid}", status_code=204)
 async def delete_asset(aid:str, conn=Depends(db), user=Depends(require_write)):
@@ -491,30 +627,49 @@ async def list_stock(q:Optional[str]=None, cat:Optional[str]=None,
     return [_out(r) for r in rows]
 
 @app.post("/api/stock", status_code=201)
-async def create_stock(s:StockCreate, conn=Depends(db), _=Depends(require_write)):
+async def create_stock(s:StockCreate, conn=Depends(db), user=Depends(require_write)):
     row = await conn.fetchrow("""
         INSERT INTO stock (category,brand,model,spec,form_factor,interface,
             total_qty,avail_qty,alloc_qty,unit_cost,storage_loc,notes)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0,$9,$10,$11) RETURNING *""",
         s.cat,s.brand,s.model,s.spec,s.ff,s.ifc,s.total,s.avail,s.cost,s.loc,s.notes)
+    item_name = f"{s.brand or ''} {s.model or ''}".strip() or s.cat
+    await log_audit(conn, user, "STOCK_CREATED", "stock", str(row["id"]),
+        f"Added stock: {item_name} | Cat: {s.cat} | Qty: {s.total} | Loc: {s.loc or '—'}")
     return _out(row)
 
 @app.put("/api/stock/{sid}")
-async def update_stock(sid:str, s:StockCreate, conn=Depends(db), _=Depends(require_write)):
+async def update_stock(sid:str, s:StockCreate, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT * FROM stock WHERE id=$1", sid)
     row = await conn.fetchrow("""
         UPDATE stock SET category=$1,brand=$2,model=$3,spec=$4,form_factor=$5,interface=$6,
             total_qty=$7,avail_qty=$8,unit_cost=$9,storage_loc=$10,notes=$11,updated_at=NOW()
         WHERE id=$12 RETURNING *""",
         s.cat,s.brand,s.model,s.spec,s.ff,s.ifc,s.total,s.avail,s.cost,s.loc,s.notes,sid)
     if not row: raise HTTPException(404,"Stock item not found")
+    item_name = f"{s.brand or ''} {s.model or ''}".strip() or s.cat
+    changes = []
+    if old:
+        if old["total_qty"] != s.total: changes.append(f"Qty: {old['total_qty']} → {s.total}")
+        if old["avail_qty"] != s.avail: changes.append(f"Avail: {old['avail_qty']} → {s.avail}")
+        if old["storage_loc"] != s.loc: changes.append(f"Loc: {old['storage_loc'] or '—'} → {s.loc or '—'}")
+        if old["spec"] != s.spec: changes.append(f"Spec: {old['spec'] or '—'} → {s.spec or '—'}")
+    detail = f"Updated stock: {item_name}"
+    if changes: detail += " | " + " | ".join(changes)
+    await log_audit(conn, user, "STOCK_UPDATED", "stock", sid, detail)
     return _out(row)
 
 @app.delete("/api/stock/{sid}", status_code=204)
-async def delete_stock(sid:str, conn=Depends(db), _=Depends(require_write)):
+async def delete_stock(sid:str, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT category,brand,model FROM stock WHERE id=$1", sid)
     await conn.execute("DELETE FROM stock WHERE id=$1", sid)
+    if old:
+        item_name = f"{old['brand'] or ''} {old['model'] or ''}".strip() or old["category"]
+        await log_audit(conn, user, "STOCK_DELETED", "stock", sid,
+            f"Deleted stock item: {item_name} | Cat: {old['category']}")
 
 @app.post("/api/stock/transaction")
-async def stock_transaction(tx:StockTransaction, conn=Depends(db), _=Depends(require_write)):
+async def stock_transaction(tx:StockTransaction, conn=Depends(db), user=Depends(require_write)):
     s = await conn.fetchrow("SELECT * FROM stock WHERE id=$1", tx.stock_id)
     if not s: raise HTTPException(404,"Stock item not found")
     avail,total,alloc = s["avail_qty"],s["total_qty"],s["alloc_qty"]
@@ -532,14 +687,50 @@ async def stock_transaction(tx:StockTransaction, conn=Depends(db), _=Depends(req
         "UPDATE stock SET total_qty=$1,avail_qty=$2,alloc_qty=$3,updated_at=NOW() WHERE id=$4",
         total,avail,alloc,tx.stock_id)
     await conn.execute(
-        "INSERT INTO stock_transactions (stock_id,tx_type,qty,reference,notes) VALUES ($1,$2,$3,$4,$5)",
-        tx.stock_id,tx.tx_type,tx.qty,tx.ref,tx.notes)
+        """INSERT INTO stock_transactions
+           (stock_id,tx_type,qty,reference,notes,allocated_to,username)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)""",
+        tx.stock_id, tx.tx_type, tx.qty, tx.ref, tx.notes,
+        tx.allocated_to, user.get("username"))
+
+    # ── Audit log ────────────────────────────────────────────────────
+    item_name = f"{s['brand'] or ''} {s['model'] or ''}".strip() or s["category"]
+    tx_labels = {"IN":"Received IN","OUT":"Issued OUT","ALLOCATE":"Allocated",
+                 "RETURN":"Returned","ADJUST":"Stock Adjusted"}
+    detail_parts = [
+        f"{tx_labels.get(tx.tx_type,'Txn')} {tx.qty}x {item_name}",
+        f"Category: {s['category']}",
+        f"After: avail={avail} total={total} alloc={alloc}",
+    ]
+    if tx.allocated_to: detail_parts.append(f"Asset: {tx.allocated_to}")
+    if tx.ref:          detail_parts.append(f"Ref: {tx.ref}")
+    if tx.notes:        detail_parts.append(f"Notes: {tx.notes}")
+    detail = " | ".join(detail_parts)
+
+    # Primary audit: stock entity
+    await log_audit(conn, user, f"STOCK_{tx.tx_type}", "stock", tx.stock_id,
+        detail,
+        related_entity="asset" if tx.allocated_to else None,
+        related_entity_id=tx.allocated_to)
+
+    # Secondary audit on the asset: appears in asset History tab
+    if tx.allocated_to:
+        asset_row = await conn.fetchrow(
+            "SELECT id FROM assets WHERE hostname=$1", tx.allocated_to)
+        if asset_row:
+            asset_action = "ASSET_PART_ALLOCATED" if tx.tx_type in ("ALLOCATE","OUT") else "ASSET_PART_RETURNED"
+            await log_audit(conn, user, asset_action, "asset", str(asset_row["id"]),
+                detail,
+                related_entity="stock",
+                related_entity_id=tx.stock_id)
+
     return {"status":"ok","total":total,"avail":avail,"alloc":alloc}
 
 @app.get("/api/stock/{sid}/transactions")
 async def stock_txns(sid:str, conn=Depends(db), _=Depends(get_current_user)):
     rows = await conn.fetch(
-        "SELECT * FROM stock_transactions WHERE stock_id=$1 ORDER BY created_at DESC LIMIT 100", sid)
+        """SELECT * FROM stock_transactions
+           WHERE stock_id=$1 ORDER BY created_at DESC LIMIT 200""", sid)
     return [_out(r) for r in rows]
 
 # ═══════════════════════════════════════════════════
@@ -556,7 +747,7 @@ async def list_conns(q:Optional[str]=None, conn=Depends(db), _=Depends(get_curre
     return [_out(r) for r in rows]
 
 @app.post("/api/connectivity", status_code=201)
-async def create_conn(c:ConnCreate, conn=Depends(db), _=Depends(require_write)):
+async def create_conn(c:ConnCreate, conn=Depends(db), user=Depends(require_write)):
     row = await conn.fetchrow("""
         INSERT INTO connectivity (src_hostname,src_slot,src_port,src_port_label,
             liu_a_rack,liu_a_hostname,liu_a_port,liu_b_rack,liu_b_hostname,liu_b_port,
@@ -565,10 +756,26 @@ async def create_conn(c:ConnCreate, conn=Depends(db), _=Depends(require_write)):
         c.src_host,c.src_slot,c.src_port,c.src_label,c.liu_a_rack,c.liu_a_host,c.liu_a_port,
         c.liu_b_rack,c.liu_b_host,c.liu_b_port,c.dst_host,c.dst_port,
         c.cable,c.speed,c.vlan,c.purpose,c.notes)
+    # Build readable path string
+    path_parts = [p for p in [c.src_host, c.src_port or c.src_label,
+                               c.liu_a_host, c.dst_host, c.dst_port] if p]
+    detail = f"Connected: {' → '.join(path_parts)}"
+    extras = [x for x in [c.cable, c.speed, f"VLAN {c.vlan}" if c.vlan else None, c.purpose] if x]
+    if extras: detail += f" | {', '.join(extras)}"
+    await log_audit(conn, user, "CONN_CREATED", "connectivity", str(row["id"]), detail,
+        related_entity="asset" if c.src_host else None,
+        related_entity_id=c.src_host)
+    # Also log on the destination (switch) asset if it exists
+    if c.dst_host:
+        dst_asset = await conn.fetchrow("SELECT id FROM assets WHERE hostname=$1", c.dst_host)
+        if dst_asset:
+            await log_audit(conn, user, "CONN_CREATED", "connectivity", str(row["id"]), detail,
+                related_entity="asset", related_entity_id=c.dst_host)
     return _out(row)
 
 @app.put("/api/connectivity/{cid}")
-async def update_conn(cid:str, c:ConnCreate, conn=Depends(db), _=Depends(require_write)):
+async def update_conn(cid:str, c:ConnCreate, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT * FROM connectivity WHERE id=$1", cid)
     row = await conn.fetchrow("""
         UPDATE connectivity SET src_hostname=$1,src_slot=$2,src_port=$3,src_port_label=$4,
             liu_a_rack=$5,liu_a_hostname=$6,liu_a_port=$7,liu_b_rack=$8,liu_b_hostname=$9,
@@ -579,11 +786,44 @@ async def update_conn(cid:str, c:ConnCreate, conn=Depends(db), _=Depends(require
         c.liu_b_rack,c.liu_b_host,c.liu_b_port,c.dst_host,c.dst_port,
         c.cable,c.speed,c.vlan,c.purpose,c.notes,cid)
     if not row: raise HTTPException(404,"Connection not found")
+    # Detect meaningful changes
+    changes = []
+    if old:
+        if old["dst_hostname"] != c.dst_host:
+            changes.append(f"Switch: {old['dst_hostname'] or '—'} → {c.dst_host or '—'}")
+        if old["dst_port"] != c.dst_port:
+            changes.append(f"Port: {old['dst_port'] or '—'} → {c.dst_port or '—'}")
+        if old["src_hostname"] != c.src_host:
+            changes.append(f"Server: {old['src_hostname'] or '—'} → {c.src_host or '—'}")
+        if old["cable_type"] != c.cable:
+            changes.append(f"Cable: {old['cable_type'] or '—'} → {c.cable or '—'}")
+        if old["speed"] != c.speed:
+            changes.append(f"Speed: {old['speed'] or '—'} → {c.speed or '—'}")
+        if old["vlan"] != c.vlan:
+            changes.append(f"VLAN: {old['vlan'] or '—'} → {c.vlan or '—'}")
+        if old["liu_a_hostname"] != c.liu_a_host:
+            changes.append(f"LIU-A: {old['liu_a_hostname'] or '—'} → {c.liu_a_host or '—'}")
+    if not changes: changes.append("Connectivity updated (no structural changes)")
+    detail = f"Updated link {c.src_host or '?'} → {c.dst_host or '?'} | " + " | ".join(changes)
+    await log_audit(conn, user, "CONN_UPDATED", "connectivity", cid, detail,
+        related_entity="asset" if c.src_host else None,
+        related_entity_id=c.src_host)
     return _out(row)
 
 @app.delete("/api/connectivity/{cid}", status_code=204)
-async def delete_conn(cid:str, conn=Depends(db), _=Depends(require_write)):
+async def delete_conn(cid:str, conn=Depends(db), user=Depends(require_write)):
+    old = await conn.fetchrow("SELECT * FROM connectivity WHERE id=$1", cid)
     await conn.execute("DELETE FROM connectivity WHERE id=$1", cid)
+    if old:
+        path_parts = [p for p in [old["src_hostname"], old["src_port"] or old["src_port_label"],
+                                   old["liu_a_hostname"], old["dst_hostname"], old["dst_port"]] if p]
+        detail = f"Removed: {' → '.join(path_parts)}"
+        extras = [x for x in [old["cable_type"], old["speed"],
+                               f"VLAN {old['vlan']}" if old["vlan"] else None] if x]
+        if extras: detail += f" | {', '.join(extras)}"
+        await log_audit(conn, user, "CONN_DELETED", "connectivity", cid, detail,
+            related_entity="asset" if old["src_hostname"] else None,
+            related_entity_id=old["src_hostname"])
 
 # ═══════════════════════════════════════════════════
 # USERS
@@ -678,77 +918,140 @@ async def export_excel(conn=Depends(db), _=Depends(get_current_user)):
         for i,h in enumerate(headers,1):
             c = ws.cell(1,i,h)
             c.fill=HDR; c.font=HF; c.alignment=HA
-            ws.column_dimensions[get_column_letter(i)].width = max(14,len(h)+4)
+            ws.column_dimensions[get_column_letter(i)].width = max(14,len(str(h))+4)
 
-    hw_fields = await conn.fetch("SELECT field_key,label FROM hw_fields ORDER BY sort_order")
+    def cv(v):
+        """Sanitise a value so openpyxl can always write it safely.
+        Handles: None, str, int, float, bool, datetime/date (tz-aware or naive),
+        Decimal (PostgreSQL NUMERIC), asyncpg UUID/Range, and any other type."""
+        if v is None:
+            return ""
+        if isinstance(v, bool):
+            return str(v)
+        if isinstance(v, int):
+            return v
+        if isinstance(v, float):
+            return v
+        if isinstance(v, str):
+            return v
+        # datetime / date — strip timezone info so openpyxl writes cleanly
+        if hasattr(v, 'isoformat'):
+            try:
+                # Return naive datetime string openpyxl always accepts
+                return v.strftime('%Y-%m-%d %H:%M:%S') if hasattr(v, 'hour') else v.strftime('%Y-%m-%d')
+            except Exception:
+                return str(v)
+        # Decimal from PostgreSQL NUMERIC columns (e.g. unit_cost)
+        try:
+            import decimal
+            if isinstance(v, decimal.Decimal):
+                return float(v)
+        except Exception:
+            pass
+        # asyncpg UUID, Record, Range, and any unknown type
+        return str(v)
 
-    # Assets sheet
-    ws_a = wb.active; ws_a.title="Assets"
-    a_hdrs = ["hostname","asset_type","status",
-              "datacenter","rack_zone","rack_row","rack_id",
-              "u_start","u_height",
-              "prov_ip","bmc_ip","data_ip","bkup_ip","mac_addr","vlan",
-              "asset_tag","serial_number","po_number","eol_date","app_owner",
-              *[f["field_key"] for f in hw_fields],"notes"]
-    style(ws_a, a_hdrs)
-    # Build rack lookup for zone/row
-    rack_meta = {}
-    for rk in await conn.fetch("SELECT rack_id,zone,row_label FROM racks"):
-        rack_meta[str(rk["rack_id"])] = {
-            "zone":      rk["zone"],
-            "row_label": rk["row_label"],
-        }
-    for r in await conn.fetch("SELECT * FROM assets ORDER BY hostname"):
-        hw = {}
-        try: hw = json.loads(r["hw_data"]) if r["hw_data"] else {}
-        except: pass
-        rid = r.get("rack_id") or ""
-        rk  = rack_meta.get(rid, {})
-        rack_zone = rk.get("zone") or ""
-        rack_row  = rk.get("row_label") or ""
-        ws_a.append([r.get("hostname"),r.get("asset_type"),r.get("status"),
-            r.get("datacenter"),rack_zone,rack_row,rid,
-            r.get("u_start"),r.get("u_height"),
-            r.get("mgmt_ip"),r.get("oob_ip"),
-            hw.get("data_ip"),hw.get("bkup_ip"),
-            r.get("mac_addr"),r.get("vlan"),
-            r.get("asset_tag"),r.get("serial_number"),
-            hw.get("po_number"),hw.get("eol_date"),hw.get("app_owner"),
-            *[hw.get(f["field_key"]) for f in hw_fields],r.get("notes")])
+    try:
+        hw_fields = await conn.fetch("SELECT field_key,label FROM hw_fields ORDER BY sort_order")
 
-    # Stock sheet
-    ws_s = wb.create_sheet("Stock")
-    style(ws_s,["category","brand","model","spec","form_factor","interface",
-                "total_qty","avail_qty","alloc_qty","storage_loc","unit_cost","notes"])
-    for r in await conn.fetch("SELECT * FROM stock ORDER BY category,brand"):
-        ws_s.append([r.get("category"),r.get("brand"),r.get("model"),r.get("spec"),
-            r.get("form_factor"),r.get("interface"),r.get("total_qty"),r.get("avail_qty"),
-            r.get("alloc_qty"),r.get("storage_loc"),r.get("unit_cost"),r.get("notes")])
+        # ── Assets sheet ──────────────────────────────────────────────
+        ws_a = wb.active; ws_a.title="Assets"
+        a_hdrs = ["hostname","asset_type","status",
+                  "datacenter","rack_zone","rack_row","rack_id",
+                  "u_start","u_height",
+                  "prov_ip","bmc_ip","data_ip","bkup_ip","mac_addr","vlan",
+                  "asset_tag","serial_number","po_number","eol_date","app_owner",
+                  *[f["field_key"] for f in hw_fields],"notes"]
+        style(ws_a, a_hdrs)
 
-    # Racks sheet
-    ws_r = wb.create_sheet("Racks")
-    style(ws_r,["rack_id","datacenter","zone","row_label","total_u","notes"])
-    for r in await conn.fetch("SELECT * FROM racks ORDER BY datacenter,zone,row_label,rack_id"):
-        ws_r.append([r.get("rack_id"),r.get("datacenter"),r.get("zone"),
-                     r.get("row_label"),r.get("total_u"),r.get("notes")])
+        rack_meta = {}
+        for rk in await conn.fetch("SELECT rack_id,zone,row_label FROM racks"):
+            rack_meta[str(rk["rack_id"])] = {
+                "zone":      rk["zone"],
+                "row_label": rk["row_label"],
+            }
 
-    # Connectivity sheet
-    ws_c = wb.create_sheet("Connectivity")
-    style(ws_c,["src_hostname","src_slot","src_port","src_port_label","liu_a_rack",
-                "liu_a_hostname","liu_a_port","liu_b_rack","liu_b_hostname","liu_b_port",
-                "dst_hostname","dst_port","cable_type","speed","vlan","purpose","notes"])
-    for r in await conn.fetch("SELECT * FROM connectivity ORDER BY src_hostname"):
-        ws_c.append([r.get("src_hostname"),r.get("src_slot"),r.get("src_port"),
-            r.get("src_port_label"),r.get("liu_a_rack"),r.get("liu_a_hostname"),r.get("liu_a_port"),
-            r.get("liu_b_rack"),r.get("liu_b_hostname"),r.get("liu_b_port"),r.get("dst_hostname"),
-            r.get("dst_port"),r.get("cable_type"),r.get("speed"),r.get("vlan"),
-            r.get("purpose"),r.get("notes")])
+        for r in await conn.fetch("SELECT * FROM assets ORDER BY hostname"):
+            hw = {}
+            try:
+                raw = r["hw_data"]
+                if isinstance(raw, str):
+                    hw = json.loads(raw)
+                elif isinstance(raw, dict):
+                    hw = raw
+            except Exception:
+                hw = {}
+            rid      = r.get("rack_id") or ""
+            rk       = rack_meta.get(str(rid), {})
+            rack_zone = rk.get("zone") or ""
+            rack_row  = rk.get("row_label") or ""
+            row_vals = [
+                cv(r.get("hostname")),   cv(r.get("asset_type")), cv(r.get("status")),
+                cv(r.get("datacenter")), cv(rack_zone),           cv(rack_row),
+                cv(rid),
+                cv(r.get("u_start")),    cv(r.get("u_height")),
+                cv(r.get("mgmt_ip")),    cv(r.get("oob_ip")),
+                cv(hw.get("data_ip")),   cv(hw.get("bkup_ip")),
+                cv(r.get("mac_addr")),   cv(r.get("vlan")),
+                cv(r.get("asset_tag")),  cv(r.get("serial_number")),
+                cv(hw.get("po_number")), cv(hw.get("eol_date")), cv(hw.get("app_owner")),
+                *[cv(hw.get(f["field_key"])) for f in hw_fields],
+                cv(r.get("notes"))
+            ]
+            ws_a.append(row_vals)
 
-    buf = io.BytesIO(); wb.save(buf); buf.seek(0)
-    fname = f"dc-manager-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.xlsx"
-    return StreamingResponse(buf,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+        # ── Stock sheet ───────────────────────────────────────────────
+        ws_s = wb.create_sheet("Stock")
+        style(ws_s,["category","brand","model","spec","form_factor","interface",
+                    "total_qty","avail_qty","alloc_qty","storage_loc","unit_cost","notes"])
+        for r in await conn.fetch("SELECT * FROM stock ORDER BY category,brand"):
+            ws_s.append([cv(r.get("category")),cv(r.get("brand")),cv(r.get("model")),
+                cv(r.get("spec")),cv(r.get("form_factor")),cv(r.get("interface")),
+                cv(r.get("total_qty")),cv(r.get("avail_qty")),cv(r.get("alloc_qty")),
+                cv(r.get("storage_loc")),cv(r.get("unit_cost")),cv(r.get("notes"))])
+
+        # ── Racks sheet ───────────────────────────────────────────────
+        ws_r = wb.create_sheet("Racks")
+        style(ws_r,["rack_id","datacenter","zone","row_label","total_u","notes"])
+        for r in await conn.fetch("SELECT * FROM racks ORDER BY datacenter,zone,row_label,rack_id"):
+            ws_r.append([cv(r.get("rack_id")),cv(r.get("datacenter")),cv(r.get("zone")),
+                         cv(r.get("row_label")),cv(r.get("total_u")),cv(r.get("notes"))])
+
+        # ── Connectivity sheet ────────────────────────────────────────
+        ws_c = wb.create_sheet("Connectivity")
+        style(ws_c,["src_hostname","src_slot","src_port","src_port_label","liu_a_rack",
+                    "liu_a_hostname","liu_a_port","liu_b_rack","liu_b_hostname","liu_b_port",
+                    "dst_hostname","dst_port","cable_type","speed","vlan","purpose","notes"])
+        for r in await conn.fetch("SELECT * FROM connectivity ORDER BY src_hostname"):
+            ws_c.append([cv(r.get("src_hostname")),cv(r.get("src_slot")),cv(r.get("src_port")),
+                cv(r.get("src_port_label")),cv(r.get("liu_a_rack")),cv(r.get("liu_a_hostname")),
+                cv(r.get("liu_a_port")),cv(r.get("liu_b_rack")),cv(r.get("liu_b_hostname")),
+                cv(r.get("liu_b_port")),cv(r.get("dst_hostname")),cv(r.get("dst_port")),
+                cv(r.get("cable_type")),cv(r.get("speed")),cv(r.get("vlan")),
+                cv(r.get("purpose")),cv(r.get("notes"))])
+
+        # ── Audit Log sheet ───────────────────────────────────────────
+        ws_al = wb.create_sheet("Audit Log")
+        style(ws_al,["timestamp","user","action","entity","entity_id","detail"])
+        for r in await conn.fetch(
+            "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 5000"):
+            ws_al.append([
+                cv(r.get("created_at")), cv(r.get("username")),
+                cv(r.get("action")),     cv(r.get("entity")),
+                cv(r.get("entity_id")),  cv(r.get("detail"))
+            ])
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        fname = f"dc-manager-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.xlsx"
+        return StreamingResponse(buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+
+    except Exception as e:
+        log.error(f"Export failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 # ═══════════════════════════════════════════════════
 # IMPORT
@@ -757,15 +1060,16 @@ from fastapi import UploadFile, File
 
 @app.post("/api/import/excel")
 async def import_excel(sheet:str, file:UploadFile=File(...),
-                       conn=Depends(db), _=Depends(require_write)):
+                       conn=Depends(db), user=Depends(require_write)):
     content = await file.read()
     wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True)
     ws_name = sheet if sheet in wb.sheetnames else \
               (sheet+"_Template" if sheet+"_Template" in wb.sheetnames else None)
     if not ws_name: raise HTTPException(400, f"Sheet '{sheet}' not found")
     rows = list(wb[ws_name].iter_rows(values_only=True))
-    if len(rows)<2: return {"imported":0,"errors":0}
+    if len(rows)<2: return {"imported":0,"skipped":0,"errors":0}
     headers = [str(h).lower().strip() if h else "" for h in rows[0]]
+
     def col(row,key):
         try: i=headers.index(key); return row[i] if i<len(row) else None
         except: return None
@@ -773,27 +1077,38 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
     def n(v):
         try: return int(v) if v is not None else None
         except: return None
+
     hw_fields = await conn.fetch("SELECT field_key FROM hw_fields")
     hw_keys   = [f["field_key"] for f in hw_fields]
-    imported=errors=0
+    imported = errors = skipped = 0
+
     for row in rows[1:]:
         if not any(row): continue
         try:
+
+            # ── ASSETS ──────────────────────────────────────────────
             if sheet=="Assets":
-                host=s(col(row,"hostname"))
+                host = s(col(row,"hostname"))
                 if not host: continue
-                # Build hw_data: custom fields + new named fields from columns
-                hw={k:s(col(row,k)) for k in hw_keys if s(col(row,k))}
+
+                # Build hw_data from custom fields + named extra fields
+                hw = {k:s(col(row,k)) for k in hw_keys if s(col(row,k))}
                 for fk in ["data_ip","bkup_ip","po_number","eol_date","app_owner"]:
-                    v=s(col(row,fk))
-                    if v: hw[fk]=v
+                    v = s(col(row,fk))
+                    if v: hw[fk] = v
+
                 prov_ip = s(col(row,"prov_ip")) or s(col(row,"mgmt_ip"))
                 bmc_ip  = s(col(row,"bmc_ip"))  or s(col(row,"oob_ip"))
                 rack_id = s(col(row,"rack_id"))
                 dc      = s(col(row,"datacenter"))
                 r_zone  = s(col(row,"rack_zone")) or s(col(row,"zone"))
-                r_row   = s(col(row,"rack_row"))   or s(col(row,"row_label"))
-                # Auto-upsert rack if zone/row provided
+                r_row   = s(col(row,"rack_row"))  or s(col(row,"row_label"))
+                u_st    = n(col(row,"u_start"))
+                u_ht    = n(col(row,"u_height")) or 1
+                a_type  = s(col(row,"asset_type")) or "Server"
+                a_stat  = s(col(row,"status"))     or "Online"
+
+                # Auto-upsert rack record if zone/row/dc provided
                 if rack_id and (r_zone or r_row or dc):
                     await conn.execute("""
                         INSERT INTO racks (rack_id,datacenter,zone,row_label,total_u)
@@ -803,72 +1118,162 @@ async def import_excel(sheet:str, file:UploadFile=File(...),
                             zone=COALESCE($3, racks.zone),
                             row_label=COALESCE($4, racks.row_label)""",
                         rack_id, dc, r_zone, r_row)
-                ex=await conn.fetchval("SELECT id FROM assets WHERE hostname=$1",host)
-                if not ex:
-                    # Check for slot conflict before inserting
-                    u_st = n(col(row,"u_start"))
-                    u_ht = n(col(row,"u_height")) or 1
-                    if rack_id and u_st:
-                        u_end = u_st + u_ht - 1
-                        conflict = await conn.fetchrow("""
-                            SELECT hostname,u_start,u_height FROM assets
-                            WHERE rack_id=$1
-                              AND u_start IS NOT NULL
-                              AND (u_start <= $3 AND u_start + u_height - 1 >= $2)""",
-                            rack_id, u_st, u_end)
-                        if conflict:
-                            log.warning(f"Import skip {host}: slot conflict in {rack_id} U{u_st}-{u_end} with {conflict['hostname']}")
-                            errors+=1
-                            continue
-                    await conn.execute("""INSERT INTO assets
-                        (hostname,asset_type,status,server_type,datacenter,rack_id,u_start,u_height,
-                         mgmt_ip,oob_ip,mac_addr,vlan,asset_tag,serial_number,notes,hw_data)
-                        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)""",
-                        host,s(col(row,"asset_type"))or"Server",s(col(row,"status"))or"Online",
-                        s(col(row,"server_type")),dc,rack_id,
-                        u_st,u_ht,
-                        prov_ip, bmc_ip, s(col(row,"mac_addr")),
-                        s(col(row,"vlan")),s(col(row,"asset_tag")),s(col(row,"serial_number")),
-                        s(col(row,"notes")),json.dumps(hw))
-                    imported+=1
+
+                ex = await conn.fetchval("SELECT id FROM assets WHERE hostname=$1", host)
+                if ex:
+                    # Hostname already exists — skip (import = new records only)
+                    skipped += 1
+                    log.info(f"Import skip asset '{host}': already exists (id={ex})")
+                    continue
+
+                # Slot conflict check
+                if rack_id and u_st:
+                    u_end = u_st + u_ht - 1
+                    conflict = await conn.fetchrow("""
+                        SELECT hostname,u_start,u_height FROM assets
+                        WHERE rack_id=$1
+                          AND u_start IS NOT NULL
+                          AND (u_start <= $3 AND u_start + u_height - 1 >= $2)""",
+                        rack_id, u_st, u_end)
+                    if conflict:
+                        log.warning(f"Import skip '{host}': slot conflict in {rack_id} "
+                                    f"U{u_st}-{u_end} with {conflict['hostname']}")
+                        errors += 1
+                        continue
+
+                new_row = await conn.fetchrow("""INSERT INTO assets
+                    (hostname,asset_type,status,server_type,datacenter,rack_id,
+                     u_start,u_height,mgmt_ip,oob_ip,mac_addr,vlan,
+                     asset_tag,serial_number,notes,hw_data)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                    RETURNING id""",
+                    host, a_type, a_stat, s(col(row,"server_type")),
+                    dc, rack_id, u_st, u_ht,
+                    prov_ip, bmc_ip, s(col(row,"mac_addr")), s(col(row,"vlan")),
+                    s(col(row,"asset_tag")), s(col(row,"serial_number")),
+                    s(col(row,"notes")), json.dumps(hw))
+
+                await log_audit(conn, user, "ASSET_CREATED", "asset", str(new_row["id"]),
+                    f"Imported: {host} | Type: {a_type} | Status: {a_stat} "
+                    f"| DC: {dc or '—'} | Rack: {rack_id or '—'} | U: {u_st or '—'}")
+                imported += 1
+
+            # ── STOCK ────────────────────────────────────────────────
             elif sheet=="Stock":
-                cat=s(col(row,"category"))
+                cat   = s(col(row,"category"))
+                brand = s(col(row,"brand"))
+                model = s(col(row,"model"))
                 if not cat: continue
-                await conn.execute("""INSERT INTO stock
+
+                # Skip if exact same brand+model already exists
+                if brand and model:
+                    ex = await conn.fetchval(
+                        "SELECT id FROM stock WHERE brand=$1 AND model=$2", brand, model)
+                    if ex:
+                        skipped += 1
+                        log.info(f"Import skip stock '{brand} {model}': already exists")
+                        continue
+
+                total = n(col(row,"total_qty")) or 0
+                avail = n(col(row,"avail_qty")) or 0
+                alloc = n(col(row,"alloc_qty")) or 0
+                # avail cannot exceed total
+                avail = min(avail, total)
+
+                new_row = await conn.fetchrow("""INSERT INTO stock
                     (category,brand,model,spec,form_factor,interface,
-                     total_qty,avail_qty,unit_cost,storage_loc,notes)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)""",
-                    cat,s(col(row,"brand")),s(col(row,"model")),s(col(row,"spec")),
-                    s(col(row,"form_factor")),s(col(row,"interface")),
-                    n(col(row,"total_qty"))or 0,n(col(row,"avail_qty"))or 0,
+                     total_qty,avail_qty,alloc_qty,unit_cost,storage_loc,notes)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                    RETURNING id""",
+                    cat, brand, model, s(col(row,"spec")),
+                    s(col(row,"form_factor")), s(col(row,"interface")),
+                    total, avail, alloc,
                     float(col(row,"unit_cost")) if col(row,"unit_cost") else None,
-                    s(col(row,"storage_loc")),s(col(row,"notes")))
-                imported+=1
+                    s(col(row,"storage_loc")), s(col(row,"notes")))
+
+                item_name = f"{brand or ''} {model or ''}".strip() or cat
+                await log_audit(conn, user, "STOCK_CREATED", "stock", str(new_row["id"]),
+                    f"Imported: {item_name} | Cat: {cat} | Total: {total} | Avail: {avail}")
+                imported += 1
+
+            # ── RACKS ────────────────────────────────────────────────
             elif sheet=="Racks":
-                rid=s(col(row,"rack_id"))
+                rid = s(col(row,"rack_id"))
                 if not rid: continue
                 await conn.execute("""
                     INSERT INTO racks (rack_id,datacenter,zone,row_label,total_u,notes)
                     VALUES ($1,$2,$3,$4,$5,$6)
                     ON CONFLICT (rack_id) DO UPDATE
-                    SET datacenter=$2,zone=$3,row_label=$4,total_u=$5,notes=$6""",
-                    rid,s(col(row,"datacenter")),s(col(row,"zone")),s(col(row,"row_label")),
-                    n(col(row,"total_u")) or 42,s(col(row,"notes")))
-                imported+=1
+                    SET datacenter=$2, zone=$3, row_label=$4, total_u=$5, notes=$6""",
+                    rid, s(col(row,"datacenter")), s(col(row,"zone")),
+                    s(col(row,"row_label")), n(col(row,"total_u")) or 42,
+                    s(col(row,"notes")))
+                await log_audit(conn, user, "RACK_CREATED", "rack", rid,
+                    f"Imported rack: {rid} | DC: {s(col(row,'datacenter')) or '—'}")
+                imported += 1
+
+            # ── CONNECTIVITY ─────────────────────────────────────────
             elif sheet=="Connectivity":
-                src=s(col(row,"src_hostname"))
+                src      = s(col(row,"src_hostname"))
+                src_port = s(col(row,"src_port")) or s(col(row,"src_port_label"))
+                dst      = s(col(row,"dst_hostname"))
                 if not src: continue
-                await conn.execute("""INSERT INTO connectivity
-                    (src_hostname,src_slot,src_port,src_port_label,liu_a_rack,liu_a_hostname,
-                     liu_a_port,liu_b_rack,liu_b_hostname,liu_b_port,dst_hostname,dst_port,
-                     cable_type,speed,vlan,purpose,notes)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)""",
-                    src,s(col(row,"src_slot")),s(col(row,"src_port")),s(col(row,"src_port_label")),
-                    s(col(row,"liu_a_rack")),s(col(row,"liu_a_hostname")),s(col(row,"liu_a_port")),
-                    s(col(row,"liu_b_rack")),s(col(row,"liu_b_hostname")),s(col(row,"liu_b_port")),
-                    s(col(row,"dst_hostname")),s(col(row,"dst_port")),s(col(row,"cable_type")),
-                    s(col(row,"speed")),s(col(row,"vlan")),s(col(row,"purpose")),s(col(row,"notes")))
-                imported+=1
+
+                # Duplicate check — a server can have many connections (one per port/label)
+                # Use src_port_label as the unique key per connection since it encodes
+                # slot+port together (e.g. "slot1port1", "slot2port1" are different links)
+                src_port_label = s(col(row,"src_port_label"))
+                if src_port_label:
+                    ex = await conn.fetchval(
+                        "SELECT id FROM connectivity WHERE src_hostname=$1 AND src_port_label=$2",
+                        src, src_port_label)
+                    if ex:
+                        skipped += 1
+                        log.info(f"Import skip connectivity {src}/{src_port_label}: already exists")
+                        continue
+                elif src_port and dst:
+                    # No label — fall back to src+port+dst as composite key
+                    ex = await conn.fetchval(
+                        """SELECT id FROM connectivity
+                           WHERE src_hostname=$1 AND src_port=$2 AND dst_hostname=$3""",
+                        src, src_port, dst)
+                    if ex:
+                        skipped += 1
+                        log.info(f"Import skip connectivity {src}/{src_port}->{dst}: already exists")
+                        continue
+
+                new_row = await conn.fetchrow("""INSERT INTO connectivity
+                    (src_hostname,src_slot,src_port,src_port_label,
+                     liu_a_rack,liu_a_hostname,liu_a_port,
+                     liu_b_rack,liu_b_hostname,liu_b_port,
+                     dst_hostname,dst_port,cable_type,speed,vlan,purpose,notes)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+                    RETURNING id""",
+                    src, s(col(row,"src_slot")), s(col(row,"src_port")),
+                    s(col(row,"src_port_label")),
+                    s(col(row,"liu_a_rack")), s(col(row,"liu_a_hostname")),
+                    s(col(row,"liu_a_port")),
+                    s(col(row,"liu_b_rack")), s(col(row,"liu_b_hostname")),
+                    s(col(row,"liu_b_port")),
+                    dst, s(col(row,"dst_port")), s(col(row,"cable_type")),
+                    s(col(row,"speed")), s(col(row,"vlan")),
+                    s(col(row,"purpose")), s(col(row,"notes")))
+
+                path_parts = [p for p in [src, src_port, s(col(row,"liu_a_hostname")), dst,
+                                          s(col(row,"dst_port"))] if p]
+                detail = f"Imported: {' → '.join(path_parts)}"
+                extras = [x for x in [s(col(row,"cable_type")), s(col(row,"speed")),
+                          f"VLAN {s(col(row,'vlan'))}" if s(col(row,"vlan")) else None] if x]
+                if extras: detail += f" | {', '.join(extras)}"
+                await log_audit(conn, user, "CONN_CREATED", "connectivity",
+                    str(new_row["id"]), detail,
+                    related_entity="asset" if src else None,
+                    related_entity_id=src)
+                imported += 1
+
         except Exception as e:
-            log.warning(f"Import row error: {e}"); errors+=1
-    return {"imported":imported,"errors":errors}
+            log.warning(f"Import row error ({sheet}): {e}")
+            errors += 1
+
+    log.info(f"Import {sheet}: imported={imported} skipped={skipped} errors={errors}")
+    return {"imported": imported, "skipped": skipped, "errors": errors}

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>DC Manager Pro</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InJhY2siIHgxPSIwIiB5MT0iMCIgeDI9IjY0IiB5Mj0iNjQiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzM4YmRmOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwMjg0YzciLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9Imdsb3ciIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSI2NCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMzhiZGY4IiBzdG9wLW9wYWNpdHk9Ii4xOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMzOGJkZjgiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9ImYiIHg9Ii0yMCUiIHk9Ii0yMCUiIHdpZHRoPSIxNDAlIiBoZWlnaHQ9IjE0MCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIxLjUiIHJlc3VsdD0iYmx1ciIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CgogIDwhLS0gRGFyayByb3VuZGVkIGJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMwZDE1MjAiLz4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0idXJsKCNnbG93KSIvPgoKICA8IS0tIOKUgOKUgCBSYWNrIGZyYW1lIOKUgOKUgCAtLT4KICA8cmVjdCB4PSIxMiIgeT0iMTAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0NCIgcng9IjMiIHN0cm9rZT0iIzFlM2E1ZiIgc3Ryb2tlLXdpZHRoPSIxLjIiIGZpbGw9InJnYmEoMTQsMzAsNTAsMC42KSIvPgoKICA8IS0tIOKUgOKUgCBTZXJ2ZXIgdW5pdCAxICh0b3ApIOKUgOKUgCAtLT4KICA8cmVjdCB4PSIxNSIgeT0iMTMiIHdpZHRoPSIzNCIgaGVpZ2h0PSI5IiByeD0iMiIgZmlsbD0iIzBhMTkyOCIgc3Ryb2tlPSJyZ2JhKDU2LDE4OSwyNDgsMC4zNSkiIHN0cm9rZS13aWR0aD0iLjgiLz4KICA8IS0tIGRyaXZlIGJheXMgLS0+CiAgPHJlY3QgeD0iMTgiIHk9IjE1LjUiIHdpZHRoPSIzLjUiIGhlaWdodD0iNCIgcng9Ii44IiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4xMikiIHN0cm9rZT0icmdiYSg1NiwxODksMjQ4LDAuMykiIHN0cm9rZS13aWR0aD0iLjYiLz4KICA8cmVjdCB4PSIyMi41IiB5PSIxNS41IiB3aWR0aD0iMy41IiBoZWlnaHQ9IjQiIHJ4PSIuOCIgZmlsbD0icmdiYSg1NiwxODksMjQ4LDAuMDgpIiBzdHJva2U9InJnYmEoNTYsMTg5LDI0OCwwLjIpIiBzdHJva2Utd2lkdGg9Ii42Ii8+CiAgPHJlY3QgeD0iMjciIHk9IjE1LjUiIHdpZHRoPSIzLjUiIGhlaWdodD0iNCIgcng9Ii44IiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4wOCkiIHN0cm9rZT0icmdiYSg1NiwxODksMjQ4LDAuMikiIHN0cm9rZS13aWR0aD0iLjYiLz4KICA8IS0tIHN0YXR1cyBMRURzIC0tPgogIDxjaXJjbGUgY3g9IjQwIiBjeT0iMTcuNSIgcj0iMS4xIiBmaWxsPSIjMzRkMzk5IiBmaWx0ZXI9InVybCgjZikiLz4KICA8Y2lyY2xlIGN4PSI0My41IiBjeT0iMTcuNSIgcj0iMS4xIiBmaWxsPSIjMzhiZGY4IiBmaWx0ZXI9InVybCgjZikiLz4KICA8Y2lyY2xlIGN4PSI0NyIgY3k9IjE3LjUiIHI9IjEuMSIgZmlsbD0iIzM4YmRmOCIgb3BhY2l0eT0iLjM1Ii8+CgogIDwhLS0g4pSA4pSAIFNlcnZlciB1bml0IDIgKG1pZCkg4pSA4pSAIC0tPgogIDxyZWN0IHg9IjE1IiB5PSIyNCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjkiIHJ4PSIyIiBmaWxsPSIjMGExOTI4IiBzdHJva2U9InJnYmEoNTYsMTg5LDI0OCwwLjMpIiBzdHJva2Utd2lkdGg9Ii44Ii8+CiAgPHJlY3QgeD0iMTgiIHk9IjI2LjUiIHdpZHRoPSIzLjUiIGhlaWdodD0iNCIgcng9Ii44IiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4xMikiIHN0cm9rZT0icmdiYSg1NiwxODksMjQ4LDAuMykiIHN0cm9rZS13aWR0aD0iLjYiLz4KICA8cmVjdCB4PSIyMi41IiB5PSIyNi41IiB3aWR0aD0iMy41IiBoZWlnaHQ9IjQiIHJ4PSIuOCIgZmlsbD0icmdiYSg1NiwxODksMjQ4LDAuMDgpIiBzdHJva2U9InJnYmEoNTYsMTg5LDI0OCwwLjIpIiBzdHJva2Utd2lkdGg9Ii42Ii8+CiAgPHJlY3QgeD0iMjciIHk9IjI2LjUiIHdpZHRoPSI1LjUiIGhlaWdodD0iNCIgcng9Ii44IiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4wNikiIHN0cm9rZT0icmdiYSg1NiwxODksMjQ4LDAuMTUpIiBzdHJva2Utd2lkdGg9Ii42Ii8+CiAgPCEtLSBhY3Rpdml0eSBiYXIgLS0+CiAgPHJlY3QgeD0iMzQiIHk9IjI3IiB3aWR0aD0iOCIgaGVpZ2h0PSIxLjIiIHJ4PSIuNiIgZmlsbD0icmdiYSg1NiwxODksMjQ4LDAuNDUpIi8+CiAgPHJlY3QgeD0iMzQiIHk9IjI5IiB3aWR0aD0iNS41IiBoZWlnaHQ9IjEuMiIgcng9Ii42IiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4zKSIvPgogIDxyZWN0IHg9IjM0IiB5PSIzMSIgd2lkdGg9IjciIGhlaWdodD0iMS4yIiByeD0iLjYiIGZpbGw9InJnYmEoNTYsMTg5LDI0OCwwLjIpIi8+CiAgPGNpcmNsZSBjeD0iNDciIGN5PSIyOC41IiByPSIxLjEiIGZpbGw9IiMzNGQzOTkiIGZpbHRlcj0idXJsKCNmKSIvPgogIDxjaXJjbGUgY3g9IjQzLjUiIGN5PSIyOC41IiByPSIxLjEiIGZpbGw9IiMzNGQzOTkiIG9wYWNpdHk9Ii41Ii8+CgogIDwhLS0g4pSA4pSAIE5ldHdvcmsgc3dpdGNoIHVuaXQgKGJvdHRvbSkg4pSA4pSAIC0tPgogIDxyZWN0IHg9IjE1IiB5PSIzNSIgd2lkdGg9IjM0IiBoZWlnaHQ9IjciIHJ4PSIyIiBmaWxsPSIjMDcxMzIwIiBzdHJva2U9InJnYmEoNTIsMjExLDE1MywwLjMpIiBzdHJva2Utd2lkdGg9Ii44Ii8+CiAgPCEtLSBwb3J0IGdyaWQgLS0+CiAgPHJlY3QgeD0iMTgiIHk9IjM3IiB3aWR0aD0iMi4yIiBoZWlnaHQ9IjMiIHJ4PSIuNSIgZmlsbD0icmdiYSg1MiwyMTEsMTUzLDAuMikiIHN0cm9rZT0icmdiYSg1MiwyMTEsMTUzLDAuNCkiIHN0cm9rZS13aWR0aD0iLjUiLz4KICA8cmVjdCB4PSIyMSIgeT0iMzciIHdpZHRoPSIyLjIiIGhlaWdodD0iMyIgcng9Ii41IiBmaWxsPSJyZ2JhKDUyLDIxMSwxNTMsMC4yKSIgc3Ryb2tlPSJyZ2JhKDUyLDIxMSwxNTMsMC40KSIgc3Ryb2tlLXdpZHRoPSIuNSIvPgogIDxyZWN0IHg9IjI0IiB5PSIzNyIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIzIiByeD0iLjUiIGZpbGw9InJnYmEoNTIsMjExLDE1MywwLjEyKSIgc3Ryb2tlPSJyZ2JhKDUyLDIxMSwxNTMsMC4zKSIgc3Ryb2tlLXdpZHRoPSIuNSIvPgogIDxyZWN0IHg9IjI3IiB5PSIzNyIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIzIiByeD0iLjUiIGZpbGw9InJnYmEoNTIsMjExLDE1MywwLjEyKSIgc3Ryb2tlPSJyZ2JhKDUyLDIxMSwxNTMsMC4zKSIgc3Ryb2tlLXdpZHRoPSIuNSIvPgogIDxyZWN0IHg9IjMwIiB5PSIzNyIgd2lkdGg9IjIuMiIgaGVpZ2h0PSIzIiByeD0iLjUiIGZpbGw9InJnYmEoNTIsMjExLDE1MywwLjA4KSIgc3Ryb2tlPSJyZ2JhKDUyLDIxMSwxNTMsMC4yNSkiIHN0cm9rZS13aWR0aD0iLjUiLz4KICA8cmVjdCB4PSIzMyIgeT0iMzciIHdpZHRoPSIyLjIiIGhlaWdodD0iMyIgcng9Ii41IiBmaWxsPSJyZ2JhKDUyLDIxMSwxNTMsMC4wOCkiIHN0cm9rZT0icmdiYSg1MiwyMTEsMTUzLDAuMjUpIiBzdHJva2Utd2lkdGg9Ii41Ii8+CiAgPGNpcmNsZSBjeD0iNDMuNSIgY3k9IjM4LjUiIHI9IjEuMSIgZmlsbD0iIzM0ZDM5OSIgZmlsdGVyPSJ1cmwoI2YpIi8+CiAgPGNpcmNsZSBjeD0iNDciIGN5PSIzOC41IiByPSIxLjEiIGZpbGw9IiMzNGQzOTkiIGZpbHRlcj0idXJsKCNmKSIvPgoKICA8IS0tIOKUgOKUgCBQYXRjaC9lbXB0eSB1bml0IOKUgOKUgCAtLT4KICA8cmVjdCB4PSIxNSIgeT0iNDQiIHdpZHRoPSIzNCIgaGVpZ2h0PSI3IiByeD0iMiIgZmlsbD0iIzA2MGYxYSIgc3Ryb2tlPSJyZ2JhKDU2LDE4OSwyNDgsMC4xMikiIHN0cm9rZS13aWR0aD0iLjYiLz4KICA8cmVjdCB4PSIxOCIgeT0iNDYuNSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjIiIHJ4PSIxIiBmaWxsPSJyZ2JhKDU2LDE4OSwyNDgsMC4wOCkiLz4KCiAgPCEtLSDilIDilIAgVmVydGljYWwgcHVsc2UgbGluZSAobGVmdCByYWlsKSDilIDilIAgLS0+CiAgPGxpbmUgeDE9IjEyIiB5MT0iMTAiIHgyPSIxMiIgeTI9IjU0IiBzdHJva2U9InVybCgjcmFjaykiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPCEtLSBwdWxzZSBkb3QgLS0+CiAgPGNpcmNsZSBjeD0iMTIiIGN5PSIyOC41IiByPSIyLjUiIGZpbGw9IiMzOGJkZjgiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iLjkiLz4KCiAgPCEtLSDilIDilIAgQ29ybmVyIG1vdW50aW5nIHNjcmV3cyDilIDilIAgLS0+CiAgPGNpcmNsZSBjeD0iMTQuNSIgY3k9IjEyIiByPSIuOSIgZmlsbD0iIzFhM2E1YyIvPgogIDxjaXJjbGUgY3g9IjQ5LjUiIGN5PSIxMiIgcj0iLjkiIGZpbGw9IiMxYTNhNWMiLz4KICA8Y2lyY2xlIGN4PSIxNC41IiBjeT0iNTIiIHI9Ii45IiBmaWxsPSIjMWEzYTVjIi8+CiAgPGNpcmNsZSBjeD0iNDkuNSIgY3k9IjUyIiByPSIuOSIgZmlsbD0iIzFhM2E1YyIvPgo8L3N2Zz4="/>
+<!-- xlsx loaded lazily only for template download to avoid CDN blocking -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 
@@ -158,6 +159,13 @@ body.lite .cx-row{background:rgba(219,225,237,.6);border-color:var(--bd)}
 .sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--bd)}
 .sb-lt{font-family:var(--mono);font-size:10.5px;color:var(--c1);letter-spacing:3.5px;font-weight:600}
 .sb-ls{font-size:8px;color:var(--dim);letter-spacing:2px;margin-top:3px;text-transform:uppercase}
+.sb-logo-img{width:28px;height:28px;border-radius:6px;object-fit:contain;flex-shrink:0}
+.sb-logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-upload-btn{font-size:9px;color:var(--dim);background:none;border:none;cursor:pointer;
+  padding:2px 6px;border-radius:3px;transition:all .15s;white-space:nowrap}
+.logo-upload-btn:hover{color:var(--c1);background:rgba(56,189,248,.08)}
+.l-logo-img{width:52px;height:52px;border-radius:10px;object-fit:contain;
+  display:block;margin:0 auto 10px;filter:drop-shadow(0 0 14px rgba(56,189,248,.35))}
 .sb-usr{margin-top:12px;background:var(--glass);border:1px solid var(--glass-bd);
   border-radius:var(--r-sm);padding:9px 11px;display:flex;align-items:center;gap:9px;backdrop-filter:blur(8px)}
 .u-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
@@ -249,12 +257,21 @@ body.lite .cx-row{background:rgba(219,225,237,.6);border-color:var(--bd)}
 .srch:focus-within{border-color:var(--c1);box-shadow:0 0 0 3px rgba(56,189,248,.1);background:rgba(56,189,248,.05)}
 .srch input{background:none;border:none;flex:1;color:var(--hi);font-size:12px;padding:0;outline:none;font-family:var(--fn)}
 .srch input::placeholder{color:var(--dim)}
-select.fi_s{background:var(--glass);backdrop-filter:var(--blur-sm);
-  border:1px solid var(--glass-bd);color:var(--tx);
+select.fi_s{background:var(--s3);backdrop-filter:var(--blur-sm);
+  border:1px solid var(--bd2);color:var(--hi);
   padding:8px 11px;border-radius:var(--r-sm);font-family:var(--fn);font-size:12px;
   outline:none;cursor:pointer;transition:all .15s}
 select.fi_s:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
-select.fi_s option{background:var(--s2)}
+select.fi_s option{background:#1a1a24;color:var(--hi)}
+select.fi_s optgroup{background:#111118;color:var(--dim);font-style:normal;font-size:9px}
+/* Audit log selects — use fi_s class + height override */
+#al-action,#al-entity{
+  height:36px;
+  color:var(--hi);
+  font-size:12px;
+}
+#al-action option,#al-entity option{background:#1a1a24;color:var(--hi)}
+#al-action optgroup,#al-entity optgroup{background:#111118;color:var(--c1);font-style:normal;font-size:9px;font-weight:600}
 
 /* ══════════════════════════════════════════════════════
    TABLES
@@ -516,6 +533,14 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
 .ha-relocate{background:rgba(251,191,36,.1);color:var(--c4);border:1px solid rgba(251,191,36,.2)}
 .ha-status{background:rgba(167,139,250,.1);color:var(--c6);border:1px solid rgba(167,139,250,.2)}
 .ha-delete{background:rgba(248,113,113,.1);color:var(--c5);border:1px solid rgba(248,113,113,.2)}
+.ha-stock-in{background:rgba(52,211,153,.1);color:var(--c2);border:1px solid rgba(52,211,153,.2)}
+.ha-stock-out{background:rgba(248,113,113,.1);color:var(--c5);border:1px solid rgba(248,113,113,.2)}
+.ha-stock-alloc{background:rgba(167,139,250,.12);color:var(--c6);border:1px solid rgba(167,139,250,.2)}
+.ha-stock-return{background:rgba(251,191,36,.1);color:var(--c4);border:1px solid rgba(251,191,36,.2)}
+.ha-stock-adjust{background:rgba(56,189,248,.1);color:var(--c1);border:1px solid rgba(56,189,248,.2)}
+.ha-conn{background:rgba(251,146,60,.1);color:var(--c3);border:1px solid rgba(251,146,60,.2)}
+.ha-conn-del{background:rgba(248,113,113,.08);color:var(--c5);border:1px solid rgba(248,113,113,.15)}
+.hist-source{font-size:8px;color:var(--dim);font-family:var(--mono);margin-left:4px;opacity:.7}
 .hist-detail{flex:1;color:var(--tx);line-height:1.5}
 .hist-meta{color:var(--dim);font-size:9px;white-space:nowrap;flex-shrink:0}
 .topo-node{position:absolute;transform:translate(-50%,-50%);cursor:grab;user-select:none;text-align:center;pointer-events:all}
@@ -607,7 +632,58 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
 <div id="lp">
   <div class="lgrid"></div>
   <div class="lbox">
-    <div class="l-logo"><span class="l-ico">⬡</span><div class="l-t">DC MANAGER PRO</div><div class="l-s">DATACENTER OPERATIONS PLATFORM</div></div>
+    <div class="l-logo">
+  <div style="display:flex;justify-content:center;margin-bottom:10px;position:relative">
+    <!-- Default SVG logo — hidden when custom logo uploaded -->
+    <div id="login-logo-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" width="64" height="64" style="filter:drop-shadow(0 0 18px rgba(56,189,248,.35))">
+      <defs>
+        <linearGradient id="lrack" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/></linearGradient>
+        <linearGradient id="lglow" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#38bdf8" stop-opacity=".18"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/></linearGradient>
+        <filter id="lf"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="64" height="64" rx="14" fill="#0d1520"/>
+      <rect width="64" height="64" rx="14" fill="url(#lglow)"/>
+      <rect x="12" y="10" width="40" height="44" rx="3" stroke="#1e3a5f" stroke-width="1.2" fill="rgba(14,30,50,0.6)"/>
+      <rect x="15" y="13" width="34" height="9" rx="2" fill="#0a1928" stroke="rgba(56,189,248,0.35)" stroke-width=".8"/>
+      <rect x="18" y="15.5" width="3.5" height="4" rx=".8" fill="rgba(56,189,248,0.12)" stroke="rgba(56,189,248,0.3)" stroke-width=".6"/>
+      <rect x="22.5" y="15.5" width="3.5" height="4" rx=".8" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.2)" stroke-width=".6"/>
+      <rect x="27" y="15.5" width="3.5" height="4" rx=".8" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.2)" stroke-width=".6"/>
+      <circle cx="40" cy="17.5" r="1.1" fill="#34d399" filter="url(#lf)"/>
+      <circle cx="43.5" cy="17.5" r="1.1" fill="#38bdf8" filter="url(#lf)"/>
+      <circle cx="47" cy="17.5" r="1.1" fill="#38bdf8" opacity=".35"/>
+      <rect x="15" y="24" width="34" height="9" rx="2" fill="#0a1928" stroke="rgba(56,189,248,0.3)" stroke-width=".8"/>
+      <rect x="18" y="26.5" width="3.5" height="4" rx=".8" fill="rgba(56,189,248,0.12)" stroke="rgba(56,189,248,0.3)" stroke-width=".6"/>
+      <rect x="22.5" y="26.5" width="3.5" height="4" rx=".8" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.2)" stroke-width=".6"/>
+      <rect x="27" y="26.5" width="5.5" height="4" rx=".8" fill="rgba(56,189,248,0.06)" stroke="rgba(56,189,248,0.15)" stroke-width=".6"/>
+      <rect x="34" y="27" width="8" height="1.2" rx=".6" fill="rgba(56,189,248,0.45)"/>
+      <rect x="34" y="29" width="5.5" height="1.2" rx=".6" fill="rgba(56,189,248,0.3)"/>
+      <rect x="34" y="31" width="7" height="1.2" rx=".6" fill="rgba(56,189,248,0.2)"/>
+      <circle cx="47" cy="28.5" r="1.1" fill="#34d399" filter="url(#lf)"/>
+      <circle cx="43.5" cy="28.5" r="1.1" fill="#34d399" opacity=".5"/>
+      <rect x="15" y="35" width="34" height="7" rx="2" fill="#071320" stroke="rgba(52,211,153,0.3)" stroke-width=".8"/>
+      <rect x="18" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.2)" stroke="rgba(52,211,153,0.4)" stroke-width=".5"/>
+      <rect x="21" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.2)" stroke="rgba(52,211,153,0.4)" stroke-width=".5"/>
+      <rect x="24" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.3)" stroke-width=".5"/>
+      <rect x="27" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.3)" stroke-width=".5"/>
+      <rect x="30" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" stroke-width=".5"/>
+      <rect x="33" y="37" width="2.2" height="3" rx=".5" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" stroke-width=".5"/>
+      <circle cx="43.5" cy="38.5" r="1.1" fill="#34d399" filter="url(#lf)"/>
+      <circle cx="47" cy="38.5" r="1.1" fill="#34d399" filter="url(#lf)"/>
+      <rect x="15" y="44" width="34" height="7" rx="2" fill="#060f1a" stroke="rgba(56,189,248,0.12)" stroke-width=".6"/>
+      <rect x="18" y="46.5" width="12" height="2" rx="1" fill="rgba(56,189,248,0.08)"/>
+      <line x1="12" y1="10" x2="12" y2="54" stroke="url(#lrack)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="28.5" r="2.5" fill="#38bdf8" filter="url(#lf)" opacity=".9"/>
+      <circle cx="14.5" cy="12" r=".9" fill="#1a3a5c"/>
+      <circle cx="49.5" cy="12" r=".9" fill="#1a3a5c"/>
+      <circle cx="14.5" cy="52" r=".9" fill="#1a3a5c"/>
+      <circle cx="49.5" cy="52" r=".9" fill="#1a3a5c"/>
+    </svg></div>
+    <!-- Custom logo image — shown only when custom logo set -->
+    <img id="login-logo-img" src="" alt="Logo" style="display:none;width:64px;height:64px;border-radius:12px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(56,189,248,.35))"/>
+  </div>
+  <div class="l-t">DC MANAGER PRO</div>
+  <div class="l-s">DATACENTER OPERATIONS PLATFORM</div>
+</div>
     <div class="l-title">Sign In</div>
     <div class="l-sub">Enter your credentials to access the platform</div>
     <div class="l-err" id="l-err">Invalid username or password.</div>
@@ -622,10 +698,48 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
 <div id="app" style="display:none;flex;height:100vh;overflow:hidden">
 <nav id="sb">
   <div class="sb-top">
-    <div style="display:flex;align-items:center;justify-content:space-between"><div><div class="sb-lt">⬡ DC MANAGER</div><div class="sb-ls">OPERATIONS PLATFORM</div></div><button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">◑</button></div>
-    <div class="sb-usr"><div class="u-av" id="sb-av"></div><div class="u-info"><div class="u-name" id="sb-un"></div><div class="u-role" id="sb-ur"></div></div><button class="u-out" onclick="doLogout()" title="Sign out">⏻</button></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="sb-logo-wrap" onclick="go('dash')" title="DC Manager Pro — click to go to Dashboard"
+          style="width:32px;height:32px;flex-shrink:0;cursor:pointer;position:relative;border-radius:7px;overflow:hidden">
+          <div id="sb-logo-svg" style="width:32px;height:32px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" width="32" height="32" style="flex-shrink:0;filter:drop-shadow(0 0 6px rgba(56,189,248,.3))">
+                <defs>
+                  <linearGradient id="srack" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/></linearGradient>
+                  <filter id="sf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <rect width="64" height="64" rx="14" fill="#0d1520"/>
+                <rect x="12" y="10" width="40" height="44" rx="3" stroke="#1e3a5f" stroke-width="1.2" fill="rgba(14,30,50,0.6)"/>
+                <rect x="15" y="13" width="34" height="9" rx="2" fill="#0a1928" stroke="rgba(56,189,248,0.35)" stroke-width=".8"/>
+                <circle cx="40" cy="17.5" r="1.1" fill="#34d399" filter="url(#sf)"/>
+                <circle cx="43.5" cy="17.5" r="1.1" fill="#38bdf8" filter="url(#sf)"/>
+                <rect x="15" y="24" width="34" height="9" rx="2" fill="#0a1928" stroke="rgba(56,189,248,0.3)" stroke-width=".8"/>
+                <circle cx="47" cy="28.5" r="1.1" fill="#34d399" filter="url(#sf)"/>
+                <rect x="15" y="35" width="34" height="7" rx="2" fill="#071320" stroke="rgba(52,211,153,0.3)" stroke-width=".8"/>
+                <circle cx="43.5" cy="38.5" r="1.1" fill="#34d399" filter="url(#sf)"/>
+                <circle cx="47" cy="38.5" r="1.1" fill="#34d399" filter="url(#sf)"/>
+                <rect x="15" y="44" width="34" height="7" rx="2" fill="#060f1a" stroke="rgba(56,189,248,0.12)" stroke-width=".6"/>
+                <line x1="12" y1="10" x2="12" y2="54" stroke="url(#srack)" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="28.5" r="2.5" fill="#38bdf8" filter="url(#sf)" opacity=".9"/>
+              </svg></div>
+          <img id="sb-logo-img" src="" alt="" style="display:none;width:32px;height:32px;border-radius:7px;object-fit:contain"/>
+        </div>
+        <div><div class="sb-lt">DC MANAGER</div><div class="sb-ls">OPERATIONS PLATFORM</div></div>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">◑</button>
+    </div>
+    <div class="sb-usr">
+      <div class="u-av" id="sb-av"></div>
+      <div class="u-info">
+        <div class="u-name" id="sb-un"></div>
+        <div class="u-role" id="sb-ur"></div>
+      </div>
+      <button class="u-out" onclick="doLogout()" title="Sign out">⏻</button>
+    </div>
+    <!-- Hidden file input for logo upload -->
+    <input type="file" id="logo-file-input" accept="image/png,image/jpeg,image/svg+xml,image/gif,image/webp"
+      style="display:none" onchange="onLogoUpload(event)"/>
   </div>
-  <div class="sb-nav">
+    <div class="sb-nav">
     <div class="sb-sec">Overview</div>
     <div class="ni on" id="ni-dash" onclick="go('dash')"><span class="ni-i">◈</span>Dashboard</div>
     <div class="sb-sec">Assets</div>
@@ -641,6 +755,9 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
     <div class="ni" id="ni-users" onclick="go('users')" style="display:none"><span class="ni-i">👤</span>Users</div>
     <div class="ni" id="ni-fields" onclick="go('fields')" style="display:none"><span class="ni-i">⚙</span>Field Manager</div>
     <div class="ni" id="ni-perms" onclick="go('perms')" style="display:none"><span class="ni-i">🔒</span>Permissions</div>
+    <div class="ni" id="ni-audit" onclick="go('audit')" style="display:none"><span class="ni-i">📋</span>Audit Log</div>
+    <div class="ni" id="ni-activity" onclick="go('dash');setTimeout(()=>{const el=$('d-activity');if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},200)" style="display:none"><span class="ni-i">⚡</span>Recent Activity</div>
+    <div class="ni" id="ni-logo" onclick="openLogoSettings()" style="display:none"><span class="ni-i">🖼</span>Logo Settings</div>
   </div>
   <div class="sb-stats">
     <div class="ss"><span class="ss-k">Assets</span><span class="ss-v" id="ss-a">0</span></div>
@@ -649,7 +766,7 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
     <div class="ss"><span class="ss-k">Low Stock</span><span class="ss-v w" id="ss-ls">0</span></div>
     <div class="ss"><span class="ss-k">Connections</span><span class="ss-v" id="ss-co">0</span></div>
   </div>
-  <div class="sb-footer">v3.0.3 &nbsp;·&nbsp; DEVELOPED BY<br/><span>PKLAKKOJU</span></div>
+  <div class="sb-footer">v3.1.2 &nbsp;·&nbsp; DEVELOPED BY<br/><span>PKLAKKOJU</span></div>
 </nav>
 <div id="mn">
   <div class="topbar">
@@ -664,7 +781,18 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
         <div class="card" style="padding:14px 16px"><div class="sh" style="margin-bottom:10px"><span class="sh-t">Assets by Type</span></div><div id="d-bytype"></div></div>
         <div class="card" style="padding:14px 16px"><div class="sh" style="margin-bottom:10px"><span class="sh-t">Stock Summary</span></div><div id="d-stock"></div></div>
       </div>
-      <div class="card" style="padding:14px 16px"><div class="sh" style="margin-bottom:10px"><span class="sh-t">Recent Assets</span></div><div id="d-recent"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="card" style="padding:14px 16px"><div class="sh" style="margin-bottom:10px"><span class="sh-t">Recent Assets</span></div><div id="d-recent"></div></div>
+        <div class="card" style="padding:14px 16px">
+          <div class="sh" style="margin-bottom:10px">
+            <span class="sh-t">Recent Activity</span>
+            <span style="font-size:9px;color:var(--dim);margin-left:8px">latest changes across all assets</span>
+            <div class="sh-sep"></div>
+            <button class="btn bs bsm" onclick="go('audit')" style="font-size:9px;white-space:nowrap" title="Open full Audit Log">📋 View All →</button>
+          </div>
+          <div id="d-activity"><div class="empty"><p>Loading…</p></div></div>
+        </div>
+      </div>
     </div>
     <div class="view" id="view-assets">
       <!-- Toolbar -->
@@ -788,6 +916,96 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
       <div class="sh"><span class="sh-t">Role Permissions Matrix</span></div>
       <div id="perms-view"></div>
     </div>
+    <!-- AUDIT LOG VIEW (Admin + Superuser) -->
+    <div class="view" id="view-audit">
+      <div class="sh">
+        <span class="sh-t">Audit Log</span>
+        <div class="sh-sep"></div>
+        <button class="btn bs bsm" onclick="exportAuditLog()" title="Export audit log to CSV">↓ Export CSV</button>
+      </div>
+      <!-- Filters bar -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:flex-end">
+        <div class="fg" style="margin:0;flex:1;min-width:200px">
+          <label style="font-size:10px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase">Search</label>
+          <input id="al-q" placeholder="hostname, rack, keyword…" oninput="debounceAudit()"
+            style="height:36px;font-size:12px;color:var(--hi)"/>
+        </div>
+        <div class="fg" style="margin:0;min-width:160px">
+          <label style="font-size:10px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase">Action</label>
+          <select id="al-action" class="fi_s" onchange="renderAuditLog()" style="height:36px;font-size:12px;width:100%">
+            <option value="">All Actions</option>
+            <optgroup label="── Asset ──">
+            <option value="ASSET_CREATED">Asset Created</option>
+            <option value="ASSET_UPDATED">Asset Updated</option>
+            <option value="ASSET_RELOCATED">Asset Relocated</option>
+            <option value="ASSET_STATUS_CHANGE">Status Change</option>
+            <option value="ASSET_DELETED">Asset Deleted</option>
+            <option value="ASSET_PART_ALLOCATED">Part Allocated to Asset</option>
+            <option value="ASSET_PART_RETURNED">Part Returned from Asset</option>
+            </optgroup>
+            <optgroup label="── Stock / Parts ──">
+            <option value="STOCK_CREATED">Stock Created</option>
+            <option value="STOCK_UPDATED">Stock Updated</option>
+            <option value="STOCK_DELETED">Stock Deleted</option>
+            <option value="STOCK_IN">Stock IN</option>
+            <option value="STOCK_OUT">Stock OUT</option>
+            <option value="STOCK_ALLOCATE">Stock Allocated</option>
+            <option value="STOCK_RETURN">Stock Returned</option>
+            <option value="STOCK_ADJUST">Stock Adjusted</option>
+            </optgroup>
+            <optgroup label="── Connectivity ──">
+            <option value="CONN_CREATED">Link Added</option>
+            <option value="CONN_UPDATED">Link Changed</option>
+            <option value="CONN_DELETED">Link Removed</option>
+            </optgroup>
+            <optgroup label="── Rack ──">
+            <option value="RACK_CREATED">Rack Created</option>
+            <option value="RACK_UPDATED">Rack Updated</option>
+            <option value="RACK_DELETED">Rack Deleted</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="fg" style="margin:0;min-width:140px">
+          <label style="font-size:10px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase">Entity Type</label>
+          <select id="al-entity" class="fi_s" onchange="renderAuditLog()" style="height:36px;font-size:12px;width:100%">
+            <option value="">All Entities</option>
+            <option value="asset">Assets</option>
+            <option value="stock">Stock / Parts</option>
+            <option value="connectivity">Connectivity</option>
+            <option value="rack">Racks</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0;min-width:130px">
+          <label style="font-size:10px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase">User</label>
+          <input id="al-user" placeholder="username…" oninput="debounceAudit()"
+            style="height:36px;font-size:12px;color:var(--hi)"/>
+        </div>
+        <div class="fg" style="margin:0;min-width:140px">
+          <label style="font-size:10px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase">Since Date</label>
+          <input id="al-since" type="date" onchange="renderAuditLog()"
+            style="height:36px;font-size:12px;color:var(--hi)"/>
+        </div>
+        <button class="btn bs" onclick="clearAuditFilters()" style="height:36px;align-self:flex-end;font-size:12px;padding:0 14px">Clear Filters</button>
+      </div>
+      <!-- Summary chips -->
+      <div id="al-summary" style="margin-bottom:10px;font-size:10px;color:var(--dim)"></div>
+      <!-- Table -->
+      <div style="overflow-x:auto">
+        <table class="tbl" id="al-table">
+          <thead><tr>
+            <th style="width:120px">Time</th>
+            <th style="width:90px">User</th>
+            <th style="width:130px">Action</th>
+            <th style="width:70px">Entity</th>
+            <th style="width:90px">ID</th>
+            <th>Detail</th>
+          </tr></thead>
+          <tbody id="al-body"></tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div id="al-pager" style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:10px;color:var(--dim)"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -898,13 +1116,32 @@ textarea{resize:vertical;min-height:60px;font-family:var(--mono);font-size:11px}
       Allocated: <span id="ftx-alc" style="color:var(--c6)">0</span>
     </div>
     <div class="f2">
-      <div class="fg"><label>Type *</label><select id="ftx-type"><option value="IN">IN — Receive stock</option><option value="OUT">OUT — Consume/discard</option><option value="ALLOCATE">ALLOCATE — Reserve for use</option><option value="RETURN">RETURN — Return allocated</option><option value="ADJUST">ADJUST — Set absolute qty</option></select></div>
+      <div class="fg"><label>Type *</label><select id="ftx-type" onchange="onTxTypeChange()"><option value="IN">IN — Receive stock</option><option value="OUT">OUT — Consume/discard</option><option value="ALLOCATE">ALLOCATE — Reserve for asset</option><option value="RETURN">RETURN — Return allocated</option><option value="ADJUST">ADJUST — Set absolute qty</option></select></div>
       <div class="fg"><label>Quantity *</label><input id="ftx-qty" type="number" min="1" value="1"/></div>
     </div>
-    <div class="fg"><label>Reference (PO / Server / Ticket)</label><input id="ftx-ref" placeholder="PO-2024-001"/></div>
+    <!-- Allocate to Asset — shown only for ALLOCATE and RETURN types -->
+    <div class="fg" id="ftx-asset-row" style="display:none">
+      <label>Asset Hostname <span style="color:var(--c6);font-size:9px">— which server receives this part</span></label>
+      <input id="ftx-asset" placeholder="e.g. prod-server-01" list="ftx-asset-list"/>
+      <datalist id="ftx-asset-list"></datalist>
+    </div>
+    <div class="fg"><label>Reference (PO / Ticket)</label><input id="ftx-ref" placeholder="PO-2024-001"/></div>
     <div class="fg"><label>Notes</label><textarea id="ftx-notes" rows="2"></textarea></div>
   </div>
   <div class="mftr"><button class="btn bs" onclick="cm('mTx')">Cancel</button><button class="btn bp" onclick="saveTx()">Apply</button></div>
+</div>
+</div>
+
+<!-- STOCK HISTORY MODAL -->
+<div class="mo" id="mStockHist">
+<div class="mbox mbox-lg">
+  <div class="mhdr"><span class="mtitle" id="mStHt">Stock History</span><button class="mx" onclick="cm('mStockHist')">×</button></div>
+  <div class="mbody" style="padding:0">
+    <div id="mStH-body" style="max-height:500px;overflow-y:auto;padding:0 2px">
+      <div style="padding:20px;text-align:center;color:var(--dim)">Loading…</div>
+    </div>
+  </div>
+  <div class="mftr"><button class="btn bs" onclick="cm('mStockHist')">Close</button></div>
 </div>
 </div>
 
@@ -1196,6 +1433,12 @@ async function initApp(){
   $('ni-users').style.display=showAdmin?'flex':'none';
   $('ni-fields').style.display=showAdmin?'flex':'none';
   $('ni-perms').style.display=showAdmin?'flex':'none';
+  // Show Audit Log and Recent Activity for admin + superuser
+  const showAudit = CU.role==='admin' || CU.role==='superuser';
+  $('ni-audit').style.display    = showAudit ? 'flex' : 'none';
+  $('ni-activity').style.display = showAudit ? 'flex' : 'none';
+  // Logo settings — superuser only
+  $('ni-logo').style.display = CU.role==='superuser' ? 'flex' : 'none';
   if(!canWrite()) $('import-panel').innerHTML='<div class="empty"><div class="emi">🔒</div><p>Import requires Admin or Superuser role.</p></div>';
   // Load HW fields and stats
   await loadHWFields();
@@ -1245,7 +1488,8 @@ function go(v){
   $('ni-'+v)?.classList.add('on');
   curV=v;
   const titles={dash:'Dashboard',assets:'Assets',racks:'Rack View',stock:'Stock / Parts',
-    conn:'Connectivity',export:'Export & Import',users:'User Management',fields:'Field Manager',perms:'Permissions'};
+    conn:'Connectivity',export:'Export & Import',users:'User Management',fields:'Field Manager',
+    perms:'Permissions',audit:'Audit Log'};
   $('ptitle').textContent=titles[v]||v;
   const acts={
     assets:canWrite()?`<button class="btn bp" onclick="openAssetM()">+ Add Asset</button>`:``,
@@ -1262,6 +1506,7 @@ function go(v){
   if(v==='users') renderUsers();
   if(v==='fields') renderFields();
   if(v==='perms') renderPerms();
+  if(v==='audit') renderAuditLog();
 }
 
 // ── STATUS / BADGE HELPERS ──
@@ -1297,6 +1542,28 @@ async function renderDash(){
     const assets = await api('GET','/assets');
     const rec=[...assets].slice(-8).reverse();
     $('d-recent').innerHTML=rec.length?`<table><thead><tr><th>Status</th><th>Hostname</th><th>Type</th><th>DC/Rack</th><th>Prov IP</th></tr></thead><tbody>${rec.map(a=>`<tr><td>${pdot(a.status)}${a.status}</td><td class="hi_">${a.hostname}</td><td><span class="tag">${a.asset_type}</span></td><td class="mn_">${[a.datacenter,a.rack_id].filter(Boolean).join('/')||'—'}</td><td class="mn_">${a.mgmt_ip||'—'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty"><p>No assets yet.</p></div>';
+
+    // Recent Activity widget — last 8 changes across all assets
+    if($('d-activity') && CU && (CU.role==='admin'||CU.role==='superuser')){
+      try{
+        const act = await api('GET','/audit?limit=8&offset=0');
+        const items = act.items||[];
+        $('d-activity').innerHTML = items.length ? items.map(r=>`
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)">
+            <div style="flex-shrink:0;margin-top:2px">${auditBadge(r.action)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:10px;color:var(--hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                title="${r.detail||''}">${r.detail||'—'}</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">
+                <span style="color:var(--c1)">${r.username||'—'}</span>
+                &nbsp;·&nbsp; ${fmtTs(r.created_at)}
+              </div>
+            </div>
+          </div>`).join('')
+          + ``  // "View all" moved to card header
+          : '<div class="empty"><p>No activity yet</p></div>';
+      }catch(e){ if($('d-activity')) $('d-activity').innerHTML='<div class="empty"><p>Admin access needed</p></div>'; }
+    }
 
     // Stock summary
     const stock = await api('GET','/stock');
@@ -1840,30 +2107,82 @@ function connPathHtml(c){
 }
 
 
-// ── ASSET HISTORY ────────────────────────────────────────────────────
+// ── ASSET FULL HISTORY (unified timeline) ───────────────────────────
 let _detailAssetId=null;
+
+// Maps every action string → { css class, icon, label }
+function histStyle(action){
+  const m = {
+    // Asset events
+    ASSET_CREATED:        {cls:'ha-create',    icon:'＋', label:'Created'},
+    ASSET_UPDATED:        {cls:'ha-update',    icon:'✎',  label:'Updated'},
+    ASSET_RELOCATED:      {cls:'ha-relocate',  icon:'⇄',  label:'Relocated'},
+    ASSET_STATUS_CHANGE:  {cls:'ha-status',    icon:'●',  label:'Status'},
+    ASSET_DELETED:        {cls:'ha-delete',    icon:'✕',  label:'Deleted'},
+    // Parts (stock) events
+    ASSET_PART_ALLOCATED: {cls:'ha-stock-alloc',  icon:'↓', label:'Part Added'},
+    ASSET_PART_RETURNED:  {cls:'ha-stock-return', icon:'↑', label:'Part Returned'},
+    STOCK_IN:             {cls:'ha-stock-in',     icon:'＋', label:'Stock IN'},
+    STOCK_OUT:            {cls:'ha-stock-out',    icon:'−', label:'Stock OUT'},
+    STOCK_ALLOCATE:       {cls:'ha-stock-alloc',  icon:'↓', label:'Allocated'},
+    STOCK_RETURN:         {cls:'ha-stock-return', icon:'↑', label:'Returned'},
+    STOCK_ADJUST:         {cls:'ha-stock-adjust', icon:'⟳', label:'Adjusted'},
+    STOCK_CREATED:        {cls:'ha-create',       icon:'＋', label:'Stock Created'},
+    STOCK_UPDATED:        {cls:'ha-update',       icon:'✎', label:'Stock Updated'},
+    STOCK_DELETED:        {cls:'ha-delete',       icon:'✕', label:'Stock Deleted'},
+    // Connectivity events
+    CONN_CREATED:         {cls:'ha-conn',     icon:'⇌',  label:'Link Added'},
+    CONN_UPDATED:         {cls:'ha-conn',     icon:'⇄',  label:'Link Changed'},
+    CONN_DELETED:         {cls:'ha-conn-del', icon:'⇍',  label:'Link Removed'},
+    // Rack events
+    RACK_CREATED:         {cls:'ha-create',   icon:'＋', label:'Rack Created'},
+    RACK_UPDATED:         {cls:'ha-update',   icon:'✎',  label:'Rack Updated'},
+    RACK_DELETED:         {cls:'ha-delete',   icon:'✕',  label:'Rack Deleted'},
+  };
+  return m[action] || {cls:'ha-update', icon:'○', label: action.replace(/_/g,' ')};
+}
+
+function renderHistRow(h){
+  const st      = histStyle(h.action);
+  const ts      = (h.created_at||'').replace('T',' ').slice(0,16);
+  const detail  = h.detail || '—';
+  // Source tag — shows where this event came from
+  let sourceTag = '';
+  if(h.entity==='stock' || (h.action||'').startsWith('STOCK_') || (h.action||'').startsWith('ASSET_PART_'))
+    sourceTag = '<span class="hist-source tag" style="background:rgba(167,139,250,.1);color:var(--c6);border:1px solid rgba(167,139,250,.2);font-size:7px">PARTS</span>';
+  else if(h.entity==='connectivity' || (h.action||'').startsWith('CONN_'))
+    sourceTag = '<span class="hist-source tag" style="background:rgba(251,146,60,.1);color:var(--c3);border:1px solid rgba(251,146,60,.2);font-size:7px">CABLING</span>';
+
+  return `<div class="hist-row">
+    <span class="hist-action ${st.cls}">${st.icon} ${st.label}</span>
+    ${sourceTag}
+    <span class="hist-detail" style="flex:1">${detail}</span>
+    <span class="hist-meta">${h.username||'?'}<br/>${ts}</span>
+  </div>`;
+}
+
 async function loadAssetHistory(){
   if(!_detailAssetId) return;
   const el=$('mDf-hist'); if(!el) return;
   el.innerHTML='<div style="padding:16px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
   try{
-    const hist=await api('GET',`/assets/${_detailAssetId}/history`);
-    if(!hist.length){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:11px">No history recorded yet.</div>'; return; }
-    const actionClass=a=>{
-      if(a==='ASSET_CREATED') return 'ha-create';
-      if(a==='ASSET_DELETED') return 'ha-delete';
-      if(a==='ASSET_RELOCATED') return 'ha-relocate';
-      if(a==='ASSET_STATUS_CHANGE') return 'ha-status';
-      return 'ha-update';
-    };
-    const actionLabel=a=>a.replace('ASSET_','').replace('_',' ');
-    el.innerHTML=hist.map(h=>`
-      <div class="hist-row">
-        <span class="hist-action ${actionClass(h.action)}">${actionLabel(h.action)}</span>
-        <span class="hist-detail">${h.detail||'—'}</span>
-        <span class="hist-meta">${h.username||'?'}<br/>${(h.created_at||'').replace('T',' ').slice(0,16)}</span>
-      </div>`).join('');
-  }catch(e){ el.innerHTML=`<div style="padding:16px;color:var(--c5);font-size:11px">Failed to load history: ${e.message}</div>`; }
+    // Use full-history endpoint — returns asset events + parts + connectivity in one list
+    const hist = await api('GET',`/assets/${_detailAssetId}/full-history`);
+    if(!hist.length){
+      el.innerHTML='<div style="padding:20px;text-align:center;color:var(--dim);font-size:11px">No history recorded yet.</div>';
+      return;
+    }
+    // Legend
+    const legend = `<div style="padding:8px 13px;border-bottom:1px solid var(--bd);font-size:9px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap">
+      <span>Timeline includes:</span>
+      <span style="color:var(--c2)">■ Asset changes</span>
+      <span style="color:var(--c6)">■ Parts allocated/returned</span>
+      <span style="color:var(--c3)">■ Connectivity changes</span>
+    </div>`;
+    el.innerHTML = legend + hist.map(renderHistRow).join('');
+  }catch(e){
+    el.innerHTML=`<div style="padding:16px;color:var(--c5);font-size:11px">Failed to load history: ${e.message}</div>`;
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -2260,10 +2579,11 @@ async function renderStock(){
       return `<tr><td><span class="badge b-blue">${s.category}</span></td><td class="hi_">${s.brand||'—'}</td><td>${s.model||'—'}</td><td class="mn_">${s.spec||'—'}</td><td><span class="tag">${s.form_factor||'—'}</span></td><td><span class="tag">${s.interface||'—'}</span></td>
       <td class="mn_">${s.total_qty||0}</td><td class="mn_" style="color:${col}"><b>${s.avail_qty||0}</b></td><td class="mn_" style="color:var(--c6)">${s.alloc_qty||0}</td>
       <td style="font-size:9.5px">${s.storage_loc||'—'}</td><td class="mn_" style="font-size:9.5px">${s.unit_cost?'₹'+Number(s.unit_cost).toLocaleString():'—'}</td>
-      <td style="white-space:nowrap">${ro?'':
-        `<button class="btn bw bxs" onclick="openTx('${s.id}','${(s.brand||'')+' '+(s.model||'')}',${s.total_qty||0},${s.avail_qty||0},${s.alloc_qty||0})">Txn</button>
-         <button class="btn bs bxs" style="margin-left:2px" onclick="openStockM('${s.id}')">Edit</button>
-         <button class="btn bd_ bxs" style="margin-left:2px" onclick="delStock('${s.id}')">Del</button>`}
+      <td style="white-space:nowrap">
+        ${ro?'':` <button class="btn bw bxs" onclick="openTx('${s.id}','${(s.brand||'')+' '+(s.model||'')}',${s.total_qty||0},${s.avail_qty||0},${s.alloc_qty||0})">Txn</button>
+          <button class="btn bs bxs" style="margin-left:2px" onclick="openStockM('${s.id}')">Edit</button>
+          <button class="btn bd_ bxs" style="margin-left:2px" onclick="delStock('${s.id}')">Del</button>`}
+        <button class="btn bs bxs" style="margin-left:2px" onclick="openStockHistory('${s.id}','${((s.brand||'')+' '+(s.model||'')).trim()||s.category}')">History</button>
       </td></tr>`;}).join('');
   }catch(e){ toast('Stock load error: '+e.message,'err'); }
 }
@@ -2286,21 +2606,108 @@ async function saveStock(){
   }catch(e){ toast('Save error: '+e.message,'err'); }
 }
 async function delStock(id){if(!confirm('Delete?'))return;try{await api('DELETE',`/stock/${id}`);toast('Deleted','ok');renderStock();renderDash();}catch(e){toast(e.message,'err');}}
-function openTx(id,name,tot,avl,alc){sv('ftx-id',id);sv('ftx-item',name.trim());sv('ftx-qty',1);sv('ftx-ref','');sv('ftx-notes','');$('ftx-tot').textContent=tot;$('ftx-avl').textContent=avl;$('ftx-alc').textContent=alc;om('mTx');}
-async function saveTx(){
-  const id=$('ftx-id').value,qty=parseInt($('ftx-qty').value)||0;
-  if(qty<1){toast('Qty ≥1','err');return;}
+function onTxTypeChange(){
+  const type = $('ftx-type')?.value;
+  const row  = $('ftx-asset-row');
+  if(!row) return;
+  // Show "Allocate to Asset" field only for ALLOCATE and RETURN
+  row.style.display = (type==='ALLOCATE'||type==='RETURN') ? '' : 'none';
+  if(type==='ADJUST') sv('ftx-qty',0);
+}
+async function openTx(id,name,tot,avl,alc){
+  sv('ftx-id',id);
+  sv('ftx-item',name.trim());
+  sv('ftx-qty',1);
+  sv('ftx-ref','');
+  sv('ftx-notes','');
+  sv('ftx-asset','');
+  $('ftx-tot').textContent=tot;
+  $('ftx-avl').textContent=avl;
+  $('ftx-alc').textContent=alc;
+  // Default to ALLOCATE and trigger type change handler
+  if($('ftx-type')) $('ftx-type').value='ALLOCATE';
+  onTxTypeChange();
+  // Populate asset datalist for autocomplete
   try{
-    const r=await api('POST','/stock/transaction',{stock_id:id,tx_type:$('ftx-type').value,qty,ref:fv('ftx-ref'),notes:fv('ftx-notes')});
-    $('ftx-tot').textContent=r.total;$('ftx-avl').textContent=r.avail;$('ftx-alc').textContent=r.alloc;
-    cm('mTx');toast('Transaction applied','ok');renderStock();renderDash();
+    const assets = await api('GET','/assets');
+    const dl = $('ftx-asset-list');
+    if(dl) dl.innerHTML = assets.map(a=>`<option value="${a.hostname}">`).join('');
+  }catch(e){}
+  om('mTx');
+}
+async function saveTx(){
+  const id=$('ftx-id').value, qty=parseInt($('ftx-qty').value)||0;
+  if(qty<1){toast('Qty must be ≥ 1','err');return;}
+  const txType = $('ftx-type').value;
+  const allocTo = (txType==='ALLOCATE'||txType==='RETURN') ? (fv('ftx-asset')||null) : null;
+  try{
+    const r=await api('POST','/stock/transaction',{
+      stock_id:id, tx_type:txType, qty,
+      ref:fv('ftx-ref'), notes:fv('ftx-notes'),
+      allocated_to:allocTo
+    });
+    $('ftx-tot').textContent=r.total;
+    $('ftx-avl').textContent=r.avail;
+    $('ftx-alc').textContent=r.alloc;
+    cm('mTx');
+    toast('Transaction applied','ok');
+    renderStock();renderDash();
   }catch(e){ toast(e.message,'err'); }
 }
 
-// ─────────────────────────────────────────────
-// CONNECTIVITY
-// ─────────────────────────────────────────────
-// ── Connectivity table state ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// STOCK HISTORY MODAL
+// ═══════════════════════════════════════════════════════════════
+async function openStockHistory(stockId, itemName){
+  $('mStHt').textContent = `History — ${itemName}`;
+  $('mStH-body').innerHTML = '<div style="padding:20px;text-align:center;color:var(--dim)">Loading…</div>';
+  om('mStockHist');
+  try{
+    const hist = await api('GET', `/stock/${stockId}/history`);
+    if(!hist.length){
+      $('mStH-body').innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim)">No history yet for this item.</div>';
+      return;
+    }
+    // Separate audit entries from raw transaction records
+    const rows = hist.map(h => {
+      // Raw transaction record (source_type=transaction) — format differently
+      if(h.source_type === 'transaction'){
+        const txLabels = {IN:'ha-stock-in',OUT:'ha-stock-out',ALLOCATE:'ha-stock-alloc',RETURN:'ha-stock-return',ADJUST:'ha-stock-adjust'};
+        const txIcons  = {IN:'＋',OUT:'−',ALLOCATE:'↓',RETURN:'↑',ADJUST:'⟳'};
+        const cls  = txLabels[h.tx_type] || 'ha-update';
+        const icon = txIcons[h.tx_type]  || '○';
+        const ts   = (h.created_at||'').replace('T',' ').slice(0,16);
+        let detail = `${h.tx_type} × ${h.qty}`;
+        if(h.allocated_to) detail += ` → <b style="color:var(--c1)">${h.allocated_to}</b>`;
+        if(h.reference)    detail += ` | Ref: ${h.reference}`;
+        if(h.notes)        detail += ` | ${h.notes}`;
+        return `<div class="hist-row">
+          <span class="hist-action ${cls}">${icon} ${h.tx_type}</span>
+          <span class="hist-detail" style="flex:1">${detail}</span>
+          <span class="hist-meta">${h.username||'—'}<br/>${ts}</span>
+        </div>`;
+      }
+      // Audit log entry
+      return renderHistRow(h);
+    });
+
+    // Summary: total transactions
+    const txCount  = hist.filter(h=>h.source_type==='transaction').length;
+    const allocRows = hist.filter(h=>h.source_type==='transaction' && h.allocated_to);
+    const allocSummary = allocRows.length
+      ? `<div style="padding:8px 13px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:9px;color:var(--dim)">
+           ${txCount} transactions &nbsp;·&nbsp;
+           Allocated to: ${[...new Set(allocRows.map(r=>r.allocated_to))].join(', ')||'—'}
+         </div>`
+      : `<div style="padding:8px 13px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:9px;color:var(--dim)">${txCount} transactions</div>`;
+
+    $('mStH-body').innerHTML = allocSummary + rows.join('');
+  }catch(e){
+    $('mStH-body').innerHTML = `<div style="padding:16px;color:var(--c5)">Error: ${e.message}</div>`;
+  }
+}
+
+
 const CCOLS=[
   {id:'chk',      label:'',           w:36,  always:true},
   {id:'server',   label:'Server',     w:150, on:true,  sort:'src_hostname'},
@@ -2644,7 +3051,9 @@ async function doExport(){
 }
 
 function downloadTemplate(){
-  const wb=XLSX.utils.book_new();
+  // Lazy-load xlsx only when actually needed (avoids CDN blocking on restricted networks)
+  function _doTemplate(){
+    const wb=XLSX.utils.book_new();
   // ── Assets Template ──────────────────────────────────────────────────
   // Fixed columns + custom HW fields
   // Assets_Template — rack zone/row columns included directly
@@ -2660,13 +3069,20 @@ function downloadTemplate(){
     ...HW_FIELDS.map(f=>f.placeholder||''),'Primary web server'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aHdr,aExample]),'Assets_Template');
   // ── Stock Template ───────────────────────────────────────────────────
-  const sHdr=['category','brand','model','spec','form_factor','interface','total_qty','avail_qty','storage_loc','unit_cost','notes'];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([sHdr,['SSD','Samsung','870 EVO','2TB','2.5"','SATA III',20,20,'Shelf A-3',8500,'']]),'Stock_Template');
+  const sHdr=['category','brand','model','spec','form_factor','interface','total_qty','avail_qty','alloc_qty','storage_loc','unit_cost','notes'];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([sHdr,['SSD','Samsung','870 EVO','2TB','2.5"','SATA III',20,20,0,'Shelf A-3',8500,'']]),'Stock_Template');
   // ── Connectivity Template ────────────────────────────────────────────
   const cHdr=['src_hostname','src_slot','src_port','src_port_label','liu_a_rack','liu_a_hostname','liu_a_port','liu_b_rack','liu_b_hostname','liu_b_port','dst_hostname','dst_port','cable_type','speed','vlan','purpose','notes'];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([cHdr,['web-prod-01','slot1','port1','slot1port1','R-02','LIU-02','port5','R-10','LIU-10','port5','core-sw-01','Gi1/0/10','Fiber SM','10G','100','Data','']]),'Connectivity_Template');
-  XLSX.writeFile(wb,'dc-manager-import-templates.xlsx');
-  toast('Templates downloaded','ok');
+    XLSX.writeFile(wb,'dc-manager-import-templates.xlsx');
+    toast('Templates downloaded','ok');
+  }
+  if(typeof XLSX!=='undefined'){ _doTemplate(); return; }
+  const sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  sc.onload=_doTemplate;
+  sc.onerror=()=>toast('Cannot load xlsx library (network blocked). Use browser with internet access.','err');
+  document.head.appendChild(sc);
 }
 
 let impFile=null;
@@ -2679,11 +3095,395 @@ async function doImport(){
   try{
     toast('Importing…','inf');
     const r=await apiUpload(`/import/excel?sheet=${sheet}`,fd);
-    $('fi-result').innerHTML=`<div style="background:var(--s3);border:1px solid var(--bd);border-radius:3px;padding:9px;font-size:11px"><span style="color:var(--c2)">✓ Imported ${r.imported} rows</span>${r.errors?` <span style="color:var(--c5);margin-left:10px">✕ ${r.errors} errors</span>`:''}</div>`;
+    $('fi-result').innerHTML=`<div style="background:var(--s3);border:1px solid var(--bd);border-radius:3px;padding:9px;font-size:11px">
+      <span style="color:var(--c2)">✓ Imported ${r.imported} rows</span>
+      ${r.skipped?` <span style="color:var(--c4);margin-left:10px">⊘ ${r.skipped} skipped (already exist)</span>`:''}
+      ${r.errors?` <span style="color:var(--c5);margin-left:10px">✕ ${r.errors} errors (slot conflicts / bad data)</span>`:''}
+    </div>`;
     toast(`Imported ${r.imported} rows`,'ok');
     go(curV);
   }catch(e){ toast('Import error: '+e.message,'err'); }
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIT LOG — Global Activity Feed
+// Shows all changes across all assets in one place.
+// Filters: action type, entity, user, date, free-text search.
+// ═══════════════════════════════════════════════════════════════
+
+let _auditData    = [];      // raw items from server
+let _auditTotal   = 0;       // total matching server-side
+let _auditPage    = 1;
+let _auditPerPage = 50;
+let _auditDebTimer = null;
+
+// ── Action colour/label map ────────────────────────────────────
+const AUDIT_STYLES = {
+  ASSET_CREATED:       { cls:'b-ok',   icon:'＋', label:'Created'  },
+  ASSET_UPDATED:       { cls:'b-blue', icon:'✎',  label:'Updated'  },
+  ASSET_RELOCATED:     { cls:'b-warn', icon:'⇄',  label:'Relocated'},
+  ASSET_STATUS_CHANGE: { cls:'b-pur',  icon:'●',  label:'Status'   },
+  ASSET_DELETED:       { cls:'b-err',  icon:'✕',  label:'Deleted'  },
+  RACK_CREATED:        { cls:'b-ok',   icon:'＋', label:'Rack+'    },
+  RACK_UPDATED:        { cls:'b-blue', icon:'✎',  label:'Rack ✎'  },
+  RACK_DELETED:        { cls:'b-err',  icon:'✕',  label:'Rack ✕'  },
+};
+function auditBadge(action){
+  const st = AUDIT_STYLES[action] || { cls:'b-off', icon:'○', label: action };
+  return `<span class="badge ${st.cls}" title="${action}">${st.icon} ${st.label}</span>`;
+}
+
+// ── Format timestamp ───────────────────────────────────────────
+function fmtTs(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);   // seconds ago
+  if(diff < 60)   return `${diff}s ago`;
+  if(diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if(diff < 86400)return `${Math.floor(diff/3600)}h ago`;
+  // Older — show date + time
+  return d.toLocaleDateString(undefined,{day:'2-digit',month:'short'}) +
+         ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Main fetch + render ────────────────────────────────────────
+async function renderAuditLog(){
+  if(!TOKEN) return;
+  loading('al-body');
+
+  const q       = $('al-q')?.value?.trim()   || '';
+  const action  = $('al-action')?.value      || '';
+  const entity  = $('al-entity')?.value      || '';
+  const user    = $('al-user')?.value?.trim() || '';
+  const since   = $('al-since')?.value       || '';
+  const offset  = (_auditPage - 1) * _auditPerPage;
+
+  const params = new URLSearchParams({ limit: _auditPerPage, offset });
+  if(q)      params.set('q',      q);
+  if(action) params.set('action', action);
+  if(entity) params.set('entity', entity);
+  if(user)   params.set('username', user);
+  if(since)  params.set('since',  since);
+
+  try{
+    const data = await api('GET', `/audit?${params}`);
+    _auditData  = data.items  || [];
+    _auditTotal = data.total  || 0;
+    renderAuditTable();
+    renderAuditPager();
+    renderAuditSummary();
+  }catch(e){
+    $('al-body').innerHTML = `<tr><td colspan="6" style="color:var(--c5);padding:20px;text-align:center">
+      ${e.message.includes('403') ? '⚠ Access denied — Admin or Superuser role required' : '✕ '+e.message}
+    </td></tr>`;
+  }
+}
+
+// ── Render table rows ──────────────────────────────────────────
+function renderAuditTable(){
+  const tbody = $('al-body');
+  if(!_auditData.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--dim)">No activity found matching filters</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _auditData.map(row => {
+    const detail = row.detail || '—';
+    // Truncate long detail strings, show full on hover
+    const shortDetail = detail.length > 120 ? detail.slice(0,120)+'…' : detail;
+    // Highlight rack moves and status changes in detail text
+    const hlDetail = shortDetail
+      .replace(/(Rack:.*?(?:\||$))/g, '<span style="color:var(--c4)">$1</span>')
+      .replace(/(Status:.*?(?:\||$))/g, '<span style="color:var(--c6)">$1</span>')
+      .replace(/(U Position:.*?(?:\||$))/g, '<span style="color:var(--c3)">$1</span>');
+
+    // Entity cell — readable label with colour, clickable for assets
+    const entityLabels = {asset:'Asset',stock:'Stock',connectivity:'Cable',rack:'Rack'};
+    const entityColors = {asset:'var(--c1)',stock:'var(--c6)',connectivity:'var(--c3)',rack:'var(--c4)'};
+    const eLabel = entityLabels[row.entity] || row.entity || '—';
+    const eColor = entityColors[row.entity] || 'var(--dim)';
+    let entityCell;
+    if(row.entity === 'asset' && row.entity_id && row.action !== 'ASSET_DELETED'){
+      entityCell = `<span style="color:${eColor};cursor:pointer;font-size:10px;text-decoration:underline dotted"
+        onclick="openAssetById('${row.entity_id}')" title="Open asset">${eLabel} ↗</span>`;
+    } else {
+      entityCell = `<span style="color:${eColor};font-size:10px">${eLabel}</span>`;
+    }
+
+    return `<tr>
+      <td style="color:var(--dim);font-size:10px;white-space:nowrap" title="${row.created_at||''}">${fmtTs(row.created_at)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--c1)">${row.username||'—'}</td>
+      <td>${auditBadge(row.action)}</td>
+      <td>${entityCell}</td>
+      <td style="font-family:var(--mono);font-size:9px;color:var(--dim);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${row.entity_id||''}">${row.entity_id ? row.entity_id.slice(0,8)+'…' : '—'}</td>
+      <td style="font-size:10px;color:var(--tx)" title="${detail}">${hlDetail}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Pagination ─────────────────────────────────────────────────
+function renderAuditPager(){
+  const pager = $('al-pager');
+  if(!pager) return;
+  const totalPages = Math.ceil(_auditTotal / _auditPerPage) || 1;
+  if(totalPages <= 1){ pager.innerHTML = `<span>${_auditTotal} entries</span>`; return; }
+
+  let btns = [];
+  btns.push(`<button class="pg-btn" onclick="_auditPage=1;renderAuditLog()" ${_auditPage===1?'disabled':''}>«</button>`);
+  btns.push(`<button class="pg-btn" onclick="_auditPage=Math.max(1,_auditPage-1);renderAuditLog()" ${_auditPage===1?'disabled':''}>‹</button>`);
+
+  const start = Math.max(1, _auditPage-2);
+  const end   = Math.min(totalPages, _auditPage+2);
+  for(let p=start; p<=end; p++){
+    btns.push(`<button class="pg-btn${p===_auditPage?' active':''}" onclick="_auditPage=${p};renderAuditLog()">${p}</button>`);
+  }
+  btns.push(`<button class="pg-btn" onclick="_auditPage=Math.min(${totalPages},_auditPage+1);renderAuditLog()" ${_auditPage===totalPages?'disabled':''}>›</button>`);
+  btns.push(`<button class="pg-btn" onclick="_auditPage=${totalPages};renderAuditLog()" ${_auditPage===totalPages?'disabled':''}>»</button>`);
+  btns.push(`<span style="margin-left:8px">Page ${_auditPage} of ${totalPages} &nbsp;·&nbsp; ${_auditTotal} total</span>`);
+
+  // Per-page selector
+  btns.push(`<select style="margin-left:12px;height:24px;font-size:10px;background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:var(--r-sm)" onchange="_auditPerPage=+this.value;_auditPage=1;renderAuditLog()">
+    ${[25,50,100,200].map(n=>`<option value="${n}" ${n===_auditPerPage?'selected':''}>${n}/page</option>`).join('')}
+  </select>`);
+
+  pager.innerHTML = btns.join('');
+}
+
+// ── Summary chips ──────────────────────────────────────────────
+function renderAuditSummary(){
+  const el = $('al-summary');
+  if(!el) return;
+  const active = [];
+  if($('al-q')?.value?.trim())     active.push(`search: "${$('al-q').value.trim()}"`);
+  if($('al-action')?.value){ const sel=$('al-action'); const lbl=sel.options[sel.selectedIndex]?.text||sel.value; active.push(`action: ${lbl}`); }
+  if($('al-entity')?.value){ const sel=$('al-entity'); const lbl=sel.options[sel.selectedIndex]?.text||sel.value; active.push(`entity: ${lbl}`); }
+  if($('al-user')?.value?.trim())  active.push(`user: ${$('al-user').value.trim()}`);
+  if($('al-since')?.value)         active.push(`since: ${$('al-since').value}`);
+
+  el.innerHTML = `Showing <b style="color:var(--hi)">${_auditData.length}</b> of
+    <b style="color:var(--hi)">${_auditTotal}</b> entries
+    ${active.length ? '&nbsp;·&nbsp; Filters: ' + active.map(f=>`<span class="tag" style="font-size:9px">${f}</span>`).join(' ') : ''}`;
+}
+
+// ── Debounce for text inputs ───────────────────────────────────
+function debounceAudit(){
+  clearTimeout(_auditDebTimer);
+  _auditDebTimer = setTimeout(()=>{ _auditPage=1; renderAuditLog(); }, 350);
+}
+
+// ── Clear all filters ──────────────────────────────────────────
+function clearAuditFilters(){
+  sv('al-q',''); sv('al-action',''); sv('al-entity','');
+  sv('al-user',''); sv('al-since','');
+  _auditPage=1;
+  renderAuditLog();
+}
+
+// ── Export audit log to CSV ────────────────────────────────────
+async function exportAuditLog(){
+  if(!TOKEN){ toast('Not logged in','err'); return; }
+  const btn = document.querySelector('[onclick="exportAuditLog()"]');
+  if(btn){ btn.disabled=true; btn.textContent='Exporting…'; }
+  try{
+    // Fetch ALL records (no limit) for export
+    const params = new URLSearchParams({ limit: 9999, offset: 0 });
+    const q      = $('al-q')?.value?.trim();
+    const action = $('al-action')?.value;
+    const entity = $('al-entity')?.value;
+    const user   = $('al-user')?.value?.trim();
+    const since  = $('al-since')?.value;
+    if(q)      params.set('q',       q);
+    if(action) params.set('action',  action);
+    if(entity) params.set('entity',  entity);
+    if(user)   params.set('username',user);
+    if(since)  params.set('since',   since);
+
+    const data = await api('GET', `/audit?${params}`);
+    const rows  = data.items || [];
+
+    // Build CSV
+    const cols = ['Timestamp','User','Action','Entity','Entity ID','Detail'];
+    const escape = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    const csv = [
+      cols.join(','),
+      ...rows.map(r => [
+        escape(r.created_at || ''),
+        escape(r.username   || ''),
+        escape(r.action     || ''),
+        escape(r.entity     || ''),
+        escape(r.entity_id  || ''),
+        escape(r.detail     || ''),
+      ].join(','))
+    ].join('\n');
+
+    // Download
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+    toast(`Exported ${rows.length} audit entries`,'ok');
+  }catch(e){
+    toast('Export error: '+e.message,'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='↓ Export CSV'; }
+  }
+}
+
+// ── Open asset from audit log row ─────────────────────────────
+async function openAssetById(id){
+  try{
+    const a = await api('GET', `/assets/${id}`);
+    openAssetDetail(a);
+    go('assets');
+  }catch(e){ toast('Asset not found (may have been deleted)','warn'); }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM LOGO — upload, persist, restore
+// Logo is stored in localStorage as base64 data URI.
+// Works across sessions without any backend change.
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// LOGO SETTINGS (Superuser only)
+// Logo stored in localStorage — persists without backend changes.
+// Only superuser can upload/remove. All roles see the result.
+// ═══════════════════════════════════════════════════════════════
+
+const LOGO_STORAGE_KEY = 'dcm_custom_logo';
+
+// Open Logo Settings modal — superuser only
+function openLogoSettings(){
+  if(!CU || CU.role !== 'superuser'){
+    toast('Logo settings — Superuser only','warn');
+    return;
+  }
+  // Populate preview and status
+  const saved = localStorage.getItem(LOGO_STORAGE_KEY);
+  const preview = $('ml-preview');
+  const status  = $('ml-status');
+  const removeRow = $('ml-remove-row');
+  if(preview){
+    if(saved){
+      preview.innerHTML = `<img src="${saved}" style="width:72px;height:72px;object-fit:contain;border-radius:10px"/>`;
+    } else {
+      // Show the default SVG inline preview
+      const svgEl = $('sb-logo-svg');
+      preview.innerHTML = svgEl ? svgEl.innerHTML : '⬡';
+    }
+  }
+  if(status)   status.textContent = saved ? 'Custom logo active' : 'Using default logo';
+  if(removeRow) removeRow.style.display = saved ? '' : 'none';
+  om('mLogo');
+}
+
+// File input change handler — called by hidden input
+function onLogoUpload(e){
+  // Guard: superuser only (belt-and-suspenders)
+  if(!CU || CU.role !== 'superuser'){
+    toast('Logo settings — Superuser only','warn');
+    return;
+  }
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 1048576){
+    toast('Logo too large — max 1 MB','err');
+    e.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const dataUri = ev.target.result;
+    try{
+      localStorage.setItem(LOGO_STORAGE_KEY, dataUri);
+    }catch(ex){
+      toast('Storage full — could not save logo','err');
+      return;
+    }
+    applyCustomLogo(dataUri);
+    toast('Logo updated ✓','ok');
+    // Refresh modal state
+    const removeRow = $('ml-remove-row');
+    if(removeRow) removeRow.style.display = '';
+    const status = $('ml-status');
+    if(status) status.textContent = 'Custom logo active';
+    const preview = $('ml-preview');
+    if(preview) preview.innerHTML = `<img src="${dataUri}" style="width:72px;height:72px;object-fit:contain;border-radius:10px"/>`;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = ''; // allow same file re-selection
+}
+
+// Apply logo to all three locations: sidebar, login page, browser tab
+function applyCustomLogo(dataUri){
+  // Sidebar
+  const svgWrap = $('sb-logo-svg');
+  const imgEl   = $('sb-logo-img');
+  if(svgWrap && imgEl){
+    imgEl.src = dataUri;
+    imgEl.style.display = 'block';
+    svgWrap.style.display = 'none';
+  }
+  // Login page
+  const loginImg = $('login-logo-img');
+  if(loginImg){
+    loginImg.src = dataUri;
+    loginImg.style.display = 'block';
+  }
+  const loginSvg = $('login-logo-svg');
+  if(loginSvg) loginSvg.style.display = 'none';
+  // Browser tab favicon
+  const link = document.querySelector("link[rel='icon']");
+  if(link) link.href = dataUri;
+}
+
+// Remove custom logo — restore default SVG everywhere
+function removeLogo(){
+  if(!CU || CU.role !== 'superuser'){
+    toast('Logo settings — Superuser only','warn');
+    return;
+  }
+  localStorage.removeItem(LOGO_STORAGE_KEY);
+  // Sidebar: hide image, show default SVG
+  const svgWrap = $('sb-logo-svg');
+  const imgEl   = $('sb-logo-img');
+  if(svgWrap) svgWrap.style.display = 'block';
+  if(imgEl)  { imgEl.style.display = 'none'; imgEl.src = ''; }
+  // Login page: hide image, show default SVG
+  const loginImg = $('login-logo-img');
+  const loginSvg = $('login-logo-svg');
+  if(loginImg) { loginImg.style.display = 'none'; loginImg.src = ''; }
+  if(loginSvg) loginSvg.style.display = 'block';
+  // Browser tab: restore embedded SVG favicon
+  const link = document.querySelector("link[rel='icon']");
+  if(link){
+    const orig = link.dataset.orig || link.href;
+    link.dataset.orig = orig;
+    link.href = orig;
+  }
+  // Update modal UI
+  const removeRow = $('ml-remove-row');
+  if(removeRow) removeRow.style.display = 'none';
+  const status = $('ml-status');
+  if(status) status.textContent = 'Using default logo';
+  const preview = $('ml-preview');
+  if(preview){
+    const svgEl = $('sb-logo-svg');
+    if(preview) preview.innerHTML = svgEl ? svgEl.innerHTML : '⬡';
+  }
+  toast('Custom logo removed — default restored','ok');
+}
+
+// Restore saved logo on page load (runs before login so login page shows it too)
+function loadSavedLogo(){
+  const saved = localStorage.getItem(LOGO_STORAGE_KEY);
+  if(saved) applyCustomLogo(saved);
+}
+loadSavedLogo();
 
 // ─────────────────────────────────────────────
 // STARTUP — restore session
@@ -2704,5 +3504,40 @@ async function doImport(){
   }
 })();
 </script>
+<!-- LOGO SETTINGS MODAL (Superuser only) -->
+<div class="mo" id="mLogo">
+<div class="mbox mbox-xs">
+  <div class="mhdr"><span class="mtitle">🖼 Logo Settings</span><button class="mx" onclick="cm('mLogo')">×</button></div>
+  <div class="mbody">
+    <!-- Current logo preview -->
+    <div style="display:flex;justify-content:center;margin-bottom:16px">
+      <div id="ml-preview" style="width:72px;height:72px;border-radius:12px;border:1px solid var(--bd2);
+        background:var(--s2);display:flex;align-items:center;justify-content:center;overflow:hidden">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:16px" id="ml-status">
+      Using default logo
+    </div>
+    <!-- Upload new logo -->
+    <div style="border:1px dashed var(--bd2);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:10px;
+      cursor:pointer;transition:border-color .15s" onclick="$('logo-file-input').click()"
+      onmouseenter="this.style.borderColor='var(--c1)'" onmouseleave="this.style.borderColor='var(--bd2)'">
+      <div style="font-size:22px;margin-bottom:6px">📁</div>
+      <div style="font-size:11px;color:var(--hi);font-weight:500">Click to upload logo</div>
+      <div style="font-size:9px;color:var(--dim);margin-top:3px">PNG, JPG, SVG, WebP · Max 1 MB</div>
+    </div>
+    <!-- Remove logo button — only shown when custom logo is set -->
+    <div id="ml-remove-row" style="display:none">
+      <button class="btn bd_" style="width:100%;margin-top:4px" onclick="removeLogo()">
+        ✕ Remove Custom Logo — Restore Default
+      </button>
+    </div>
+  </div>
+  <div class="mftr">
+    <button class="btn bs" onclick="cm('mLogo')">Close</button>
+  </div>
+</div>
+</div>
+
 </body>
 </html>
