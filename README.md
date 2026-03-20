@@ -757,11 +757,11 @@ Visual diagrams of every rack in your datacenters.
 **Reading a rack card:**
 ```
 R-PROD-01                              ✎  ✕
-[HYN-POD-2]  [Zone-8]  [Row-15]
+[PROD-POD-2]  [Zone-1]  [Row-10]
 ████████████░░░░░░░░░░░░░░  43%
 ───────────────────────────────────────
-42 │  HYNRBBMPRUPIWAF02 / BRR8R24  │ 42
-36 │  HYNRBBMPRUPIK8S01 / SN123456 │ 36
+42 │  APPWEBSERVER01 / BRR8R24     │ 42
+36 │  DATABASESERVER01 / SN123456  │ 36
 32 │  —                            │ 32  (empty)
 ```
 
@@ -1654,7 +1654,7 @@ sudo bash /opt/install-netdata-child-docker.sh   --parent 192.168.86.130 --apike
 
 ## Changelog
 
-### v3.1.2 (2026-03-19)
+### v3.1.2 (2026-03-20)
 - New: **Logo Settings** (Superuser only) — Admin sidebar item to upload/preview/remove custom logo
 - New: Custom logo applies to browser tab favicon, sidebar, and login page simultaneously
 - New: Logo stored in `localStorage` — persists across sessions without backend changes
