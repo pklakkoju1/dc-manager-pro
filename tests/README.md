@@ -1,19 +1,32 @@
-# DC Manager Pro — Test Suite
+# DC Manager Pro — Test Suite (v3.1)
 
-Three levels of testing — run from the `tests/` directory.
+Three levels of testing — run from the `tests/` directory on any machine
+that can reach your DC Manager server.
+
+---
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `config.py` | Target URL and credentials — edit before running |
+| `smoke_test.py` | Quick 30-second sanity check after every deployment |
+| `test_api.py` | Full functional + integration test suite (v3.1 — covers all features) |
+| `locustfile.py` | Load test with realistic user behaviour profiles |
+| `requirements-test.txt` | Python dependencies |
+| `reports/` | Load test HTML reports (created by Locust) |
 
 ---
 
 ## Setup (one time)
 
 ```bash
-# On any machine that can reach your DC Manager server (not necessarily the server itself)
 cd /appdata/dc-prod/tests
 
 pip install -r requirements-test.txt
 ```
 
-Edit `config.py` if your server IP or credentials differ from the defaults:
+Edit `config.py` to match your server:
 
 ```python
 BASE_URL   = "https://192.168.86.130"   # your server IP
@@ -29,16 +42,50 @@ DCM_URL=https://10.0.0.50 DCM_PASS=MyPass python test_api.py
 
 ---
 
-## 1. Smoke Test — run after every deployment (~30 seconds)
+## Recommended run order
 
-Checks the app is alive: health, login, core endpoints, HTTPS redirect, frontend.
+```bash
+# Step 1 — quick sanity check
+python smoke_test.py
+
+# Step 2 — full functional tests
+python test_api.py
+
+# Step 3 — load test (interactive)
+locust -f locustfile.py --host https://192.168.86.130
+```
+
+Or as a single command:
+
+```bash
+python smoke_test.py && \
+python test_api.py && \
+locust -f locustfile.py --host https://192.168.86.130 \
+  --users 20 --spawn-rate 3 --run-time 3m \
+  --headless --html reports/load-$(date +%Y%m%d).html
+```
+
+---
+
+## 1. Smoke Test (~30 seconds)
+
+Run after every deployment. Checks the app is alive before running deeper tests.
 
 ```bash
 python smoke_test.py
 
-# Against a specific server:
+# Against a different server:
 python smoke_test.py https://10.0.0.50
 ```
+
+**Checks:**
+- App reachable, DB connected
+- HTTP → HTTPS redirect working
+- Admin login succeeds, bad password rejected
+- `/api/stats`, `/api/assets`, `/api/racks`, `/api/stock`, `/api/connectivity` all return 200
+- Unauthenticated request blocked (401)
+- Excel export works and returns valid file
+- Frontend HTML loads and contains expected content
 
 **Expected output:**
 ```
@@ -67,127 +114,115 @@ Target: https://192.168.86.130
 
 ---
 
-## 2. Functional & Integration Tests — full test suite (~2-3 minutes)
+## 2. Functional & Integration Tests (~2–3 minutes)
 
-Tests every API endpoint, all CRUD operations, role enforcement, business logic,
-edge cases, and cleanup. Creates and deletes real test records in your database.
+Tests every API endpoint with real database operations. Creates test records,
+validates responses, and cleans up after itself. All test records are prefixed
+`TEST-AUTO-` so they are identifiable if cleanup fails.
 
 ```bash
 python test_api.py
 ```
 
-**What gets tested:**
+### What gets tested (v3.1)
 
 | Section | Tests |
 |---------|-------|
-| Health | `/api/health`, `/api/health/db` |
-| Auth | Login, wrong password, expired token, `/api/auth/me` |
-| Stats | All fields present, correct types |
-| Racks | Create, upsert, update, delete, 404 on missing |
-| Assets | Create, search, filter, get by ID, check-slot (free + conflict), update, history, delete |
-| Stock | Create, all 5 transaction types (IN/OUT/ALLOCATE/RETURN/ADJUST), insufficient stock error, invalid type error, transaction history |
-| Connectivity | Create, search, update, delete |
-| Users | Create, duplicate username, login as new user, role enforcement, update, cannot delete self |
-| HW Fields | Create, duplicate key, update, cannot delete system field |
-| Export | Excel download, correct content-type, valid XLSX bytes |
-| Audit Log | List, limit, entity filter, non-superuser blocked |
-| RBAC | Admin can read/write, cannot manage users/fields, cannot delete racks |
-| Edge Cases | Unknown endpoint 404, malformed JSON 422, missing required field |
-| Cleanup | Deletes all TEST- prefixed records |
+| **1. Health** | `/api/health`, `/api/health/db` — status and DB connection |
+| **2. Auth** | Valid login, wrong password, wrong username, empty credentials, token validation, pw_hash hidden, unauthenticated requests |
+| **3. Stats** | All 8 fields present, correct types, unauthenticated blocked |
+| **4. Racks** | Create, upsert (duplicate rack_id), update, non-existent 404, auth enforcement |
+| **5. Assets** | Create, search, filter by type, get by ID, slot check (free + conflict), update, asset history, **unified full-history** (asset + parts + connectivity events), auth enforcement |
+| **6. Stock + Audit** | Create, all 5 tx types (IN/OUT/ALLOCATE/RETURN/ADJUST), **ALLOCATE with `allocated_to` asset hostname**, **ASSET_PART_ALLOCATED appears in asset full-history**, **stock `/history` endpoint** (audit + tx merged), `username` in transactions, insufficient stock 400, invalid tx type 400, non-existent 404, audit log `entity=stock` filter |
+| **7. Connectivity + Audit** | Create, **second connection on same server with different `src_port_label`** (dedup fix), update (switch port change), **connectivity `/history` endpoint**, **CONN_CREATED and CONN_UPDATED in history**, **connectivity events in asset full-history**, audit log `entity=connectivity` filter, auth enforcement |
+| **8. Users** | Create user and admin, duplicate username 409, login as new user, user role blocked from assets/users/audit, update role, cannot delete self, auth enforcement |
+| **9. HW Fields** | Create custom field, duplicate key 409, update label, cannot delete system field, auth enforcement |
+| **10. Export** | Excel download, correct content-type, Content-Disposition header, non-empty file, valid XLSX magic bytes, auth enforcement |
+| **11. Audit Log** | List with pagination, `total`/`items`/`limit`/`offset` structure, filter by `entity=stock`, filter by `entity=connectivity`, filter by `action=STOCK_ALLOCATE`, filter by `action=CONN_UPDATED` (validates `→` change detection in detail), search by keyword, admin can access, user role blocked, auth enforcement |
+| **12. RBAC** | Admin can read all, admin can write assets and stock transactions, admin can access audit log, admin CANNOT manage users, admin CANNOT manage hw-fields, admin CANNOT delete racks |
+| **13. Edge Cases** | Unknown endpoint 404, malformed JSON 422, missing required field 422, stock qty=0 no crash, very long hostname no crash, delete rack with assets 400, ALLOCATE to non-existent hostname allowed (informational field, not FK) |
+| **Cleanup** | Deletes all test records in correct dependency order |
 
-```bash
-# Example output:
-══════════════════════════════════════════════════════
-  5. Assets
-══════════════════════════════════════════════════════
-  ✓  GET /api/assets → 200
-  ✓  GET /api/assets returns list
-  ✓  GET /api/assets?q= search returns list
-  ✓  GET /api/assets?type=Server → 200
-  ✓  POST /api/assets create → 201
-  ✓  Asset has correct hostname
-  ✓  Asset has correct status
-  ✓  Asset has correct rack
-  ✓  Asset has correct u_start
-  ✓  Asset has id field
-  ...
-══════════════════════════════════════════════════════
+### New tests added in v3.1 (vs previous version)
+
+| Feature | Test |
+|---------|------|
+| `GET /api/assets/{id}/full-history` | Entry structure, action/detail/username fields present |
+| Stock `allocated_to` field | ALLOCATE sends hostname, verifies `ASSET_PART_ALLOCATED` in asset history |
+| Stock `GET /api/stock/{id}/history` | Returns merged audit + transaction records |
+| Stock tx `username` field | Verified in transaction history response |
+| Connectivity second port | Same server, different `src_port_label` → both imported (not deduped) |
+| `GET /api/connectivity/{id}/history` | Returns CONN_CREATED + CONN_UPDATED entries |
+| Connectivity in asset full-history | CONN_* actions appear after creating connectivity |
+| Audit `action=STOCK_ALLOCATE` filter | Filters correctly, all items have matching action |
+| Audit `action=CONN_UPDATED` filter | Detail contains `→` (change detection working) |
+| Admin can access audit log | Admin role returns 200, not 403 |
+| Admin can do stock transactions | Admin role can POST to /api/stock/transaction |
+
+**Expected output:**
+```
+════════════════════════════════════════════════════════
   Results
-══════════════════════════════════════════════════════
-  Passed : 98
+════════════════════════════════════════════════════════
+  Passed : 110+
   Failed : 0
   Skipped: 0
-  Time   : 18.4s
-══════════════════════════════════════════════════════
+  Time   : ~20s
+════════════════════════════════════════════════════════
 ```
 
 ---
 
-## 3. Load Test (Locust) — performance and concurrency testing
+## 3. Load Test (Locust)
 
-Simulates multiple concurrent users hitting the API. Identifies performance
-bottlenecks, slow endpoints, and breaking points.
+Simulates concurrent users to find performance bottlenecks and breaking points.
 
-### Install Locust (included in requirements-test.txt)
-```bash
-pip install locust
-```
-
-### Option A — Interactive Web UI (recommended for first run)
+### Option A — Interactive Web UI (start here)
 
 ```bash
-cd tests/
 locust -f locustfile.py --host https://192.168.86.130
 ```
 
-Open `http://localhost:8089` in your browser:
-1. Set number of users (start with **10**)
-2. Set spawn rate (users per second, start with **2**)
+Open `http://localhost:8089`:
+1. Set **Users**: start with 10
+2. Set **Spawn rate**: 2 per second
 3. Click **Start swarming**
-4. Watch live RPS, response times, and failure rate
-5. Click **Stop** when done
-6. Download the report from the **Download Data** tab
+4. Watch live RPS, response times, failure rate
+5. Click **Stop** → download report from **Download Data** tab
 
-### Option B — Headless (CI / automated)
+### Option B — Headless
 
 ```bash
-# Light test — 10 users, 2 minutes
-locust -f locustfile.py \
-  --host https://192.168.86.130 \
-  --users 10 \
-  --spawn-rate 2 \
-  --run-time 2m \
-  --headless \
-  --html reports/load-test-light.html
+# Light — 10 users, 2 minutes (baseline)
+locust -f locustfile.py --host https://192.168.86.130 \
+  --users 10 --spawn-rate 2 --run-time 2m \
+  --headless --html reports/load-light.html
 
-# Moderate test — 30 users, 5 minutes
-locust -f locustfile.py \
-  --host https://192.168.86.130 \
-  --users 30 \
-  --spawn-rate 3 \
-  --run-time 5m \
-  --headless \
-  --html reports/load-test-moderate.html
+# Moderate — 30 users, 5 minutes (normal production)
+locust -f locustfile.py --host https://192.168.86.130 \
+  --users 30 --spawn-rate 3 --run-time 5m \
+  --headless --html reports/load-moderate.html
 
-# Stress test — ramp to 100 users
-locust -f locustfile.py \
-  --host https://192.168.86.130 \
-  --users 100 \
-  --spawn-rate 5 \
-  --run-time 10m \
-  --headless \
-  --html reports/load-test-stress.html
+# Stress — 100 users, 10 minutes (find the limit)
+locust -f locustfile.py --host https://192.168.86.130 \
+  --users 100 --spawn-rate 5 --run-time 10m \
+  --headless --html reports/load-stress.html
+
+# Soak — 20 users, 30 minutes (memory leak check)
+locust -f locustfile.py --host https://192.168.86.130 \
+  --users 20 --spawn-rate 2 --run-time 30m \
+  --headless --html reports/load-soak.html
 ```
 
-### User profiles in the load test
+### User profiles
 
-| User type | Weight | Behaviour |
-|-----------|--------|-----------|
-| `ReadUser` | 3x | Browse assets, search, view racks, dashboard stats |
-| `WriteUser` | 2x | Create/update/delete assets, stock transactions |
-| `HeavyUser` | 1x | Excel export, audit log, multi-slot checks |
+| Type | Weight | Behaviour |
+|------|--------|-----------|
+| `ReadUser` | 3x | Browse assets, search, filter, rack view, dashboard stats, slot checks |
+| `WriteUser` | 2x | Create/update/delete assets, stock transactions (IN/ALLOCATE/RETURN), connectivity CRUD |
+| `HeavyUser` | 1x | Excel export, audit log fetch, multi-slot checks, full-dashboard refresh |
 
-### What to look for
+### Performance targets
 
 | Metric | Healthy | Investigate |
 |--------|---------|-------------|
@@ -196,72 +231,94 @@ locust -f locustfile.py \
 | Requests/sec | > 20 RPS | dropping under load |
 | Failure rate | 0% | any failures |
 | `/api/export/excel` | < 2000ms | > 5000ms |
+| `/api/audit` | < 300ms | > 1000ms |
 
-### Monitoring during load test
+### Monitor Netdata during load test
 
-Watch the Netdata dashboard at `http://192.168.86.130:19999` while the load test runs:
+Open `https://YOUR-IP/monitor/` (or sidebar → Monitoring → Netdata) while running:
 
-- **CPU** — should stay below 80%
-- **RAM** — watch for steady growth (memory leak)
-- **PostgreSQL connections** — should stay below `max_connections`
-- **dcm_backend container** — CPU spikes are normal, sustained 100% is not
-- **dcm_postgres container** — disk I/O and query rate
-
-### Recommended test sequence
-
-1. **Smoke test first** — confirm app is healthy before load testing
-2. **Functional tests** — confirm all endpoints work correctly
-3. **Light load test** — 10 users, 2 min — baseline performance
-4. **Moderate load test** — 30 users, 5 min — normal production load
-5. **Stress test** — ramp to 100 users — find the breaking point
-6. **Soak test** — 20 users, 30 min — check for memory leaks
-
-```bash
-# Full recommended sequence:
-python smoke_test.py && \
-python test_api.py && \
-locust -f locustfile.py --host https://192.168.86.130 \
-  --users 30 --spawn-rate 3 --run-time 5m \
-  --headless --html reports/load-test-$(date +%Y%m%d).html
-```
+- **dcm_backend** container — CPU/RAM, watch for sustained 100% CPU
+- **dcm_postgres** — connections (should stay well below `max_connections = 100`)
+- **Host RAM** — watch for steady growth (memory leak indicator)
+- **Disk I/O** — spikes expected during export, sustained high = problem
 
 ---
 
-## Interpreting Results
+## Interpreting Failures
 
 ### Functional test failures
 
-| Failure | Likely cause |
-|---------|-------------|
-| `Login failed — check credentials` | Wrong `ADMIN_USER`/`ADMIN_PASS` in `config.py` |
-| `200 ≠ 201 on POST /api/assets` | Duplicate test data from previous run — check DB |
-| `401 on authenticated endpoint` | Token expired or JWT_SECRET mismatch |
-| `500 on any endpoint` | Server error — check `docker logs dcm_backend` |
-| Connection refused | App not running — check `docker ps` |
+| Message | Cause | Fix |
+|---------|-------|-----|
+| `Login failed — check credentials` | Wrong URL or password in `config.py` | Update `BASE_URL`, `ADMIN_PASS` |
+| `201 → 409 on POST /api/assets` | Test data from previous failed run still in DB | Run cleanup manually or check DB |
+| `ASSET_PART_ALLOCATED not in full-history` | Stock tx `allocated_to` not saved | Check `migrate-audit-v2.sql` was run |
+| `CONN_UPDATED not in conn history` | Old connectivity record without audit | Only new connections after v3.1.0 are audited |
+| `401 on authenticated endpoint` | Token expired mid-test | Increase `TOKEN_TTL_HOURS` in `.env` |
+| `500 on any endpoint` | Server error | `docker logs dcm_backend --tail 50` |
+| `Connection refused` | App not running | `docker ps` and `docker compose up -d` |
+
+### If cleanup fails (test records remain in DB)
+
+```bash
+# Find test records
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "SELECT hostname FROM assets WHERE hostname LIKE 'TEST-AUTO-%';"
+
+# Manual cleanup
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "DELETE FROM connectivity WHERE src_hostname LIKE 'TEST-AUTO-%';"
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "DELETE FROM assets WHERE hostname LIKE 'TEST-AUTO-%';"
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "DELETE FROM stock WHERE model LIKE 'TEST-AUTO-%';"
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "DELETE FROM racks WHERE rack_id LIKE 'TEST-AUTO-%';"
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "DELETE FROM users WHERE username LIKE 'test-auto-%';"
+```
 
 ### Load test failures
 
 ```bash
-# Check backend logs during load test
+# Backend errors during load test
 docker logs dcm_backend --tail 50 -f
 
-# Check DB connections
+# Check DB connection count
 docker exec dcm_postgres psql -U dcuser -d dcmanager \
   -c "SELECT count(*) FROM pg_stat_activity;"
 
-# Check resource usage
+# Live resource usage
 docker stats
 ```
 
 ---
 
-## Files
+## Prerequisites check
 
-| File | Purpose |
-|------|---------|
-| `config.py` | Target URL and credentials — edit before running |
-| `smoke_test.py` | Quick 30-second sanity check |
-| `test_api.py` | Full functional + integration test suite |
-| `locustfile.py` | Load test with realistic user behaviour profiles |
-| `requirements-test.txt` | Python dependencies |
-| `reports/` | Load test HTML reports (created by Locust) |
+Before running tests confirm:
+
+```bash
+# App is running
+docker ps | grep -E "dcm_postgres|dcm_backend|dcm_frontend"
+
+# API is healthy
+curl -k https://YOUR-IP/api/health
+
+# DB migration was applied (required for v3.1 audit tests)
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "\d audit_log" | grep related_entity
+# Should show: related_entity | text
+
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -c "\d stock_transactions" | grep allocated_to
+# Should show: allocated_to | text
+```
+
+If `related_entity` or `allocated_to` columns are missing, run the migration:
+
+```bash
+docker cp scripts/migrate-audit-v2.sql dcm_postgres:/tmp/
+docker exec dcm_postgres psql -U dcuser -d dcmanager \
+  -f /tmp/migrate-audit-v2.sql
+```
